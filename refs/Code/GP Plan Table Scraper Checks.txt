@@ -1,0 +1,8 @@
+GP Table Scraper Checks
+y29-22 --- All good, 1200 files per year
+y21 --- 1186 files (possibly 14 missing)
+y20 --- 1198 files (possibly 2 missing)
+y19 --- 1201 files (possibly 1 extra?!)
+y18 --- 1208 files (possibly 8 extra?!)
+y17 --- 1209 files (possibly 9 extra?!)
+y16 --- w

@@ -1,0 +1,37 @@
+# Sulekha Test Dockerfile
+# Includes dev dependencies for running tests
+
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libxml2 \
+    libxslt1.1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy project files
+COPY pyproject.toml uv.lock README.md ./
+
+# Install dependencies including dev (without installing the project yet)
+RUN uv sync --frozen --all-extras --no-install-project
+
+# Copy source code and install project with dev deps
+COPY src/ ./src/
+COPY tests/ ./tests/
+RUN uv sync --frozen --all-extras
+
+# Set environment variables - must be before any commands that need the venv
+ENV PATH="/app/.venv/bin:$PATH"
+ENV PYTHONPATH=/app/src
+ENV PYTHONUNBUFFERED=1
+
+# Verify pytest is available
+RUN pytest --version
+
+CMD ["pytest", "tests/", "-v"]

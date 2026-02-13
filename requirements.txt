@@ -1,0 +1,32 @@
+# Sulekha PDF Extraction Pipeline - Dependencies
+
+# PDF Processing
+pdf2image>=1.16.0
+Pillow>=9.0.0
+
+# LLM Integration (OpenAI SDK for Gemini's compatibility endpoint)
+openai>=1.0.0
+
+# Data Validation
+pydantic>=2.0.0
+
+# Environment Variables (optional but recommended)
+python-dotenv>=1.0.0
+
+# =============================================================================
+# System Dependencies (install separately)
+# =============================================================================
+# 
+# pdf2image requires Poppler to be installed on your system:
+#
+# macOS (using Homebrew):
+#     brew install poppler
+#
+# Ubuntu/Debian:
+#     sudo apt-get install poppler-utils
+#
+# Windows:
+#     Download from: https://github.com/oschwartz10612/poppler-windows/releases
+#     Add the bin/ folder to your PATH
+#
+# =============================================================================

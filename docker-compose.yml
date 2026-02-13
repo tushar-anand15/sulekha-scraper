@@ -1,0 +1,135 @@
+# Sulekha Data Extraction Service - Docker Compose Configuration
+# 
+# Usage:
+#   docker-compose up -d              # Start all services
+#   docker-compose logs -f worker     # Follow worker logs
+#   docker-compose exec worker sulekha progress  # Check progress
+#   docker-compose down               # Stop all services
+
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: sulekha-postgres
+    environment:
+      POSTGRES_USER: sulekha
+      POSTGRES_PASSWORD: sulekha
+      POSTGRES_DB: sulekha
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sulekha"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Redis (Celery Broker)
+  redis:
+    image: redis:7-alpine
+    container_name: sulekha-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Celery Worker (Scraping)
+  worker:
+    build: .
+    container_name: sulekha-worker
+    command: >
+      celery -A sulekha.tasks.celery_app worker
+      --loglevel=INFO
+      --concurrency=3
+      -Q default,discovery,scraper,pdf,orchestrator
+    environment:
+      - DATABASE_URL=postgresql+psycopg://sulekha:sulekha@postgres:5432/sulekha
+      - REDIS_URL=redis://redis:6379/0
+      - GCS_BUCKET_NAME=${GCS_BUCKET_NAME:-sulekha-pdfs}
+      - GCS_PROJECT_ID=${GCS_PROJECT_ID:-}
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials/gcs-key.json
+      - LOG_LEVEL=INFO
+      - LOG_FORMAT=json
+      - SCRAPER_MAX_WORKERS=3
+      - CELERY_WORKER_CONCURRENCY=3
+    volumes:
+      - ./credentials:/app/credentials:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Celery Beat Scheduler
+  beat:
+    build: .
+    container_name: sulekha-beat
+    command: >
+      celery -A sulekha.tasks.celery_app beat
+      --loglevel=INFO
+    environment:
+      - DATABASE_URL=postgresql+psycopg://sulekha:sulekha@postgres:5432/sulekha
+      - REDIS_URL=redis://redis:6379/0
+      - LOG_LEVEL=INFO
+      - LOG_FORMAT=json
+    volumes:
+      - beat_data:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Flower Monitoring UI
+  flower:
+    build: .
+    container_name: sulekha-flower
+    command: >
+      celery -A sulekha.tasks.celery_app flower
+      --port=5555
+      --broker=redis://redis:6379/0
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  # Database Migration Runner (one-off)
+  migrate:
+    build: .
+    container_name: sulekha-migrate
+    command: >
+      sh -c "alembic upgrade head && echo 'Migrations complete'"
+    environment:
+      - DATABASE_URL=postgresql+psycopg://sulekha:sulekha@postgres:5432/sulekha
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - migrate
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  beat_data:
+    driver: local
+
+networks:
+  default:
+    name: sulekha-network

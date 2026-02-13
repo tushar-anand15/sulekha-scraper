@@ -1,0 +1,206 @@
+# Sulekha Data Extraction Service - Development Docker Compose
+# 
+# This configuration uses Minio as a local S3-compatible storage
+# instead of Google Cloud Storage for local development and testing.
+#
+# Usage:
+#   docker-compose -f docker-compose.dev.yml up -d      # Start services
+#   docker-compose -f docker-compose.dev.yml logs -f    # View logs
+#   docker-compose -f docker-compose.dev.yml down -v    # Stop and remove volumes
+#
+# Testing:
+#   # Start services first:
+#   docker-compose -f docker-compose.dev.yml up -d postgres redis minio
+#   
+#   # Run tests locally (test db 'sulekha_test' is auto-created):
+#   pytest tests/ -v
+#
+# Access:
+#   - Minio Console: http://localhost:9001 (minioadmin/minioadmin)
+#   - Flower: http://localhost:5555
+#   - PostgreSQL: localhost:5432 (sulekha/sulekha)
+#   - Redis: localhost:6379
+
+version: '3.8'
+
+services:
+  # PostgreSQL Database (used for both dev and test databases)
+  postgres:
+    image: postgres:16-alpine
+    container_name: sulekha-dev-postgres
+    environment:
+      POSTGRES_USER: sulekha
+      POSTGRES_PASSWORD: sulekha
+      POSTGRES_DB: sulekha
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sulekha"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Redis (Celery Broker)
+  redis:
+    image: redis:7-alpine
+    container_name: sulekha-dev-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Minio (S3-compatible storage for local development)
+  minio:
+    image: minio/minio:latest
+    container_name: sulekha-dev-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio_dev_data:/data
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # Web Console
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Initialize Minio buckets (dev and test)
+  minio-init:
+    image: minio/mc:latest
+    container_name: sulekha-dev-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set myminio http://minio:9000 minioadmin minioadmin;
+      mc mb --ignore-existing myminio/sulekha-pdfs;
+      mc mb --ignore-existing myminio/sulekha-test;
+      mc anonymous set download myminio/sulekha-pdfs;
+      mc anonymous set download myminio/sulekha-test;
+      echo 'Minio buckets created successfully';
+      "
+    restart: "no"
+
+  # Celery Worker (Scraping)
+  # Scale with: docker-compose -f docker-compose.dev.yml up -d --scale worker=4
+  worker:
+    build: .
+    # container_name removed to allow scaling
+    command: >
+      celery -A sulekha.tasks.celery_app worker
+      --loglevel=DEBUG
+      --concurrency=4
+      -Q default,discovery,scraper,pdf,orchestrator
+    environment:
+      - DATABASE_URL=postgresql+psycopg://sulekha:sulekha@postgres:5432/sulekha
+      - REDIS_URL=redis://redis:6379/0
+      - STORAGE_BACKEND=s3
+      - S3_BUCKET_NAME=sulekha-pdfs
+      - S3_ENDPOINT_URL=http://minio:9000
+      - S3_ACCESS_KEY=minioadmin
+      - S3_SECRET_KEY=minioadmin
+      - LOG_LEVEL=DEBUG
+      - LOG_FORMAT=console
+      - SCRAPER_MAX_WORKERS=2
+      - SCRAPER_REQUEST_DELAY=0.5
+      - CELERY_WORKER_CONCURRENCY=2
+    volumes:
+      - ./src:/app/src:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  # Celery Beat Scheduler
+  beat:
+    build: .
+    container_name: sulekha-dev-beat
+    command: >
+      celery -A sulekha.tasks.celery_app beat
+      --loglevel=DEBUG
+    environment:
+      - DATABASE_URL=postgresql+psycopg://sulekha:sulekha@postgres:5432/sulekha
+      - REDIS_URL=redis://redis:6379/0
+      - LOG_LEVEL=DEBUG
+      - LOG_FORMAT=console
+    volumes:
+      - ./src:/app/src:ro
+      - beat_dev_data:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Flower Monitoring UI
+  flower:
+    build: .
+    container_name: sulekha-dev-flower
+    command: >
+      celery -A sulekha.tasks.celery_app flower
+      --port=5555
+      --broker=redis://redis:6379/0
+      --persistent=True
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql+psycopg://sulekha:sulekha@postgres:5432/sulekha
+      - STORAGE_BACKEND=s3
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  # Database Migration Runner (one-off)
+  migrate:
+    build: .
+    container_name: sulekha-dev-migrate
+    command: >
+      sh -c "
+        python -c 'from sulekha.db.session import init_db; init_db()' &&
+        echo 'Database initialized'
+      "
+    environment:
+      - DATABASE_URL=postgresql+psycopg://sulekha:sulekha@postgres:5432/sulekha
+      - STORAGE_BACKEND=s3
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - migrate
+
+volumes:
+  postgres_dev_data:
+    driver: local
+  redis_dev_data:
+    driver: local
+  minio_dev_data:
+    driver: local
+  beat_dev_data:
+    driver: local
+
+networks:
+  default:
+    name: sulekha-dev-network
