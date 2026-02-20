@@ -24,7 +24,7 @@ MAX_QUEUE ?= 1000
 SAMPLE_N ?= 3
 
 # Docker compose file
-COMPOSE_FILE ?= docker-compose.dev.yml
+COMPOSE_FILE ?= docker-compose.yml
 
 # =============================================================================
 # Help
@@ -46,7 +46,7 @@ help:
 	@echo "  make test-pipeline    Run test pipeline with random sampling (n=$(SAMPLE_N))"
 	@echo ""
 	@echo "Utilities:"
-	@echo "  make services         Start required services (postgres, redis, minio)"
+	@echo "  make services         Start required services (postgres, redis)"
 	@echo "  make worker           Start a Celery worker"
 	@echo "  make status           Show pipeline status"
 	@echo "  make queue-status     Show Celery queue status"
@@ -64,19 +64,19 @@ help:
 
 services:
 	@echo "Starting services..."
-	docker-compose -f $(COMPOSE_FILE) up -d postgres redis minio
+	docker compose -f $(COMPOSE_FILE) up -d postgres redis
 	@echo "Waiting for services to be ready..."
 	@sleep 3
 	@echo "Services started."
 
 stop:
 	@echo "Stopping services..."
-	docker-compose -f $(COMPOSE_FILE) down
+	docker compose -f $(COMPOSE_FILE) down
 	@echo "Services stopped."
 
 clean: stop
 	@echo "Cleaning up..."
-	docker-compose -f $(COMPOSE_FILE) down -v
+	docker compose -f $(COMPOSE_FILE) down -v
 	@echo "Cleanup complete."
 
 # =============================================================================
@@ -199,7 +199,7 @@ init-db:
 
 migrate: services
 	@echo "Running database migrations..."
-	docker-compose -f $(COMPOSE_FILE) --profile migrate up migrate
+	docker compose -f $(COMPOSE_FILE) --profile migrate up migrate
 	@echo "Migrations complete."
 
 # =============================================================================

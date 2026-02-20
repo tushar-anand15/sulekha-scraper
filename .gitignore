@@ -25,6 +25,7 @@ __pycache__/
 .coverage.*.*.*.*.*.*
 .coverage.*.*.*.*.*.*.*
 
+test_pdfs/
 output/
 sulekha_notes/
 refs/
@@ -32,3 +33,5 @@ refs/
 # macOS
 .DS_Store
 **/.DS_Store
+credentials/
+exports/

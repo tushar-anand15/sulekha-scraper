@@ -60,7 +60,8 @@ def run_phase(phase: int, batch_size: int):
 
 
 @main.command()
-def progress():
+@click.option("--detail", "-d", is_flag=True, help="Show year-wise breakdown")
+def progress(detail: bool):
     """Show current pipeline progress."""
     from sulekha.tasks.orchestrator import get_progress
 
@@ -73,37 +74,111 @@ def progress():
     p1 = progress_data.get("phase1", {})
     click.echo(f"Phase 1: {p1.get('name', 'Discover Districts')}")
     click.echo(f"  Status: {'Complete' if p1.get('complete') else 'In Progress'}")
-    click.echo(f"  Done: {p1.get('done', 0)}/{p1.get('total', 0)} ({p1.get('percent', 0)}%)")
+    click.echo(f"  Total district-year-type combinations: {p1.get('total', 0)}")
     click.echo()
 
     # Phase 2
     p2 = progress_data.get("phase2", {})
     click.echo(f"Phase 2: {p2.get('name', 'Discover Local Bodies')}")
     click.echo(f"  Status: {'Complete' if p2.get('complete') else 'In Progress'}")
-    if p2.get("status"):
-        for status, count in p2["status"].items():
-            click.echo(f"    {status}: {count}")
+    click.echo(f"  Done: {p2.get('done', 0)}/{p2.get('total', 0)} ({p2.get('percent', 0)}%)")
+    if p2.get("by_year_district") and detail:
+        click.echo("  By Year & District:")
+        for year, districts in sorted(p2["by_year_district"].items(), reverse=True):
+            year_total = sum(d["total"] for d in districts.values())
+            year_done = sum(d["done"] for d in districts.values())
+            year_pct = round(year_done / year_total * 100, 1) if year_total > 0 else 0
+            click.echo(f"    {year}: {year_done}/{year_total} ({year_pct}%)")
+            for district, data in sorted(districts.items()):
+                pct = round(data["done"] / data["total"] * 100, 1) if data["total"] > 0 else 0
+                click.echo(f"      {district}: {data['done']}/{data['total']} ({pct}%)")
+    elif p2.get("by_year") and detail:
+        click.echo("  By Year:")
+        for year, data in sorted(p2["by_year"].items(), reverse=True):
+            pct = round(data["done"] / data["total"] * 100, 1) if data["total"] > 0 else 0
+            click.echo(f"    {year}: {data['done']}/{data['total']} ({pct}%)")
     click.echo()
 
     # Phase 3
     p3 = progress_data.get("phase3", {})
     click.echo(f"Phase 3: {p3.get('name', 'Scrape Projects')}")
     click.echo(f"  Status: {'Complete' if p3.get('complete') else 'In Progress'}")
-    click.echo(f"  Done: {p3.get('done', 0)}/{p3.get('total', 0)} ({p3.get('percent', 0)}%)")
+    click.echo(f"  Local Bodies Done: {p3.get('done', 0)}/{p3.get('total', 0)} ({p3.get('percent', 0)}%)")
     if p3.get("status"):
-        for status, count in p3["status"].items():
-            click.echo(f"    {status}: {count}")
+        in_progress = p3["status"].get("IN_PROGRESS", 0)
+        pending = p3["status"].get("PENDING", 0)
+        if in_progress > 0 or pending > 0:
+            click.echo(f"    IN_PROGRESS: {in_progress}, PENDING: {pending}")
+    if p3.get("by_year_district") and detail:
+        click.echo("  By Year & District:")
+        for year, districts in sorted(p3["by_year_district"].items(), reverse=True):
+            year_total = sum(d["total"] for d in districts.values())
+            year_done = sum(d["done"] for d in districts.values())
+            year_in_prog = sum(d.get("in_progress", 0) for d in districts.values())
+            year_pct = round(year_done / year_total * 100, 1) if year_total > 0 else 0
+            status_str = f" [in_prog:{year_in_prog}]" if year_in_prog > 0 else ""
+            click.echo(f"    {year}: {year_done}/{year_total} ({year_pct}%){status_str}")
+            for district, data in sorted(districts.items()):
+                pct = round(data["done"] / data["total"] * 100, 1) if data["total"] > 0 else 0
+                in_prog = data.get("in_progress", 0)
+                status_str = f" [in_prog:{in_prog}]" if in_prog > 0 else ""
+                click.echo(f"      {district}: {data['done']}/{data['total']} ({pct}%){status_str}")
+    elif p3.get("by_year") and detail:
+        click.echo("  By Year:")
+        for year, data in sorted(p3["by_year"].items(), reverse=True):
+            pct = round(data["done"] / data["total"] * 100, 1) if data["total"] > 0 else 0
+            status_parts = []
+            if data.get("in_progress", 0) > 0:
+                status_parts.append(f"in_prog:{data['in_progress']}")
+            if data.get("pending", 0) > 0:
+                status_parts.append(f"pend:{data['pending']}")
+            status_str = f" [{', '.join(status_parts)}]" if status_parts else ""
+            click.echo(f"    {year}: {data['done']}/{data['total']} ({pct}%){status_str}")
     click.echo()
 
     # Phase 4
     p4 = progress_data.get("phase4", {})
     click.echo(f"Phase 4: {p4.get('name', 'Download PDFs')}")
-    click.echo(f"  Downloaded: {p4.get('downloaded', 0)}/{p4.get('total', 0)}")
-    click.echo(f"  Missing: {p4.get('missing', 0)}")
+    downloaded = p4.get('downloaded', 0)
+    missing = p4.get('missing', 0)
+    total = p4.get('total', 0)
+    downloading = p4.get("status", {}).get("DOWNLOADING", 0)
+    pending = p4.get("status", {}).get("PENDING", 0)
+    error = p4.get("status", {}).get("ERROR", 0)
+    
+    click.echo(f"  Total Projects: {total:,}")
+    click.echo(f"  Downloaded: {downloaded:,} | Missing: {missing:,} | Downloading: {downloading:,}")
+    click.echo(f"  Pending: {pending:,} | Errors: {error:,}")
     click.echo(f"  Progress: {p4.get('percent', 0)}%")
-    if p4.get("status"):
-        for status, count in p4["status"].items():
-            click.echo(f"    {status}: {count}")
+    
+    if p4.get("by_year_district") and detail:
+        click.echo("  By Year & District:")
+        for year, districts in sorted(p4["by_year_district"].items(), reverse=True):
+            # Calculate year totals
+            year_total = sum(d["total"] for d in districts.values())
+            year_done = sum(d.get("downloaded", 0) + d.get("missing", 0) for d in districts.values())
+            year_downloading = sum(d.get("downloading", 0) for d in districts.values())
+            year_pct = round(year_done / year_total * 100, 1) if year_total > 0 else 0
+            click.echo(f"    {year}: {year_done:,}/{year_total:,} ({year_pct}%) [ing:{year_downloading:,}]")
+            
+            for district, data in sorted(districts.items()):
+                done = data.get("downloaded", 0) + data.get("missing", 0)
+                pct = round(done / data["total"] * 100, 1) if data["total"] > 0 else 0
+                click.echo(
+                    f"      {district}: {done:,}/{data['total']:,} ({pct}%) "
+                    f"[dl:{data.get('downloaded', 0):,}, ing:{data.get('downloading', 0):,}]"
+                )
+    elif p4.get("by_year") and detail:
+        # Fallback to year-only view
+        click.echo("  By Year:")
+        for year, data in sorted(p4["by_year"].items(), reverse=True):
+            done = data.get("downloaded", 0) + data.get("missing", 0)
+            pct = round(done / data["total"] * 100, 1) if data["total"] > 0 else 0
+            click.echo(
+                f"    {year}: {done:,}/{data['total']:,} ({pct}%) "
+                f"[dl:{data.get('downloaded', 0):,}, miss:{data.get('missing', 0):,}, "
+                f"ing:{data.get('downloading', 0):,}, pend:{data.get('pending', 0):,}]"
+            )
     click.echo()
 
 

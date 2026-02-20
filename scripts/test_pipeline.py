@@ -26,18 +26,28 @@ from typing import Optional
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
-# Set defaults for local connection
+# Load .env file if present (for local development)
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
+# Set defaults - these will be overridden by environment variables if set
+# For Docker: environment variables are set in docker-compose.yml
+# For local: set in .env file or use these defaults (S3/Minio)
 os.environ.setdefault(
     "DATABASE_URL", "postgresql+psycopg://sulekha:sulekha@localhost:5432/sulekha"
 )
 os.environ.setdefault("REDIS_URL", "redis://localhost:6379/0")
+os.environ.setdefault("LOG_FORMAT", "console")
+os.environ.setdefault("LOG_LEVEL", "INFO")
+# Storage defaults - will use GCS if STORAGE_BACKEND=gcs is set in environment
 os.environ.setdefault("STORAGE_BACKEND", "s3")
 os.environ.setdefault("S3_ENDPOINT_URL", "http://localhost:9000")
 os.environ.setdefault("S3_ACCESS_KEY", "minioadmin")
 os.environ.setdefault("S3_SECRET_KEY", "minioadmin")
 os.environ.setdefault("S3_BUCKET_NAME", "sulekha-pdfs")
-os.environ.setdefault("LOG_FORMAT", "console")
-os.environ.setdefault("LOG_LEVEL", "INFO")
 
 
 class TestPipelineStats:

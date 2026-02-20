@@ -23,6 +23,7 @@ from tenacity import (
 )
 
 from sulekha.config import settings
+from sulekha.utils.rate_limiter import get_rate_limiter
 
 logger = structlog.get_logger(__name__)
 
@@ -95,7 +96,8 @@ class SulekhaClient:
     def __init__(
         self,
         base_url: Optional[str] = None,
-        request_delay: Optional[float] = None,
+        delay_min: Optional[float] = None,
+        delay_max: Optional[float] = None,
         request_timeout: Optional[int] = None,
         max_retries: Optional[int] = None,
     ):
@@ -103,18 +105,23 @@ class SulekhaClient:
 
         Args:
             base_url: Override the default portal URL
-            request_delay: Override the delay between requests
+            delay_min: Minimum delay between requests (seconds)
+            delay_max: Maximum delay between requests (seconds)
             request_timeout: Override the request timeout
             max_retries: Override the maximum retry count
         """
         self.base_url = base_url or settings.scraper_base_url
-        self.request_delay = request_delay or settings.scraper_request_delay
+        self.delay_min = delay_min if delay_min is not None else settings.scraper_delay_min
+        self.delay_max = delay_max if delay_max is not None else settings.scraper_delay_max
         self.request_timeout = request_timeout or settings.scraper_request_timeout
         self.max_retries = max_retries or settings.scraper_max_retries
 
         self._session: Optional[requests.Session] = None
         self.form_state = FormState()
         self.soup: Optional[BeautifulSoup] = None
+
+        # Rate limiter for global concurrency control
+        self._rate_limiter = get_rate_limiter()
 
         # Statistics tracking
         self.request_count = 0
@@ -149,9 +156,12 @@ class SulekhaClient:
         logger.info("Reset HTTP session")
 
     def _sleep(self) -> None:
-        """Sleep with some randomization to avoid detection."""
-        jitter = random.uniform(0.8, 1.2)
-        delay = self.request_delay * jitter
+        """Sleep for a random duration within the configured range.
+        
+        Uses random delay between delay_min and delay_max for more
+        natural request patterns that avoid detection.
+        """
+        delay = random.uniform(self.delay_min, self.delay_max)
         time.sleep(delay)
 
     def _parse_form_state(self, html: str) -> None:
@@ -274,7 +284,10 @@ class SulekhaClient:
         allow_redirects: bool = True,
         **kwargs: Any,
     ) -> requests.Response:
-        """Make an HTTP request with automatic retries.
+        """Make an HTTP request with automatic retries and global rate limiting.
+
+        Acquires a slot from the global rate limiter before making the request,
+        ensuring total concurrent requests across all workers stays within limits.
 
         Args:
             method: HTTP method (GET, POST)
@@ -291,27 +304,30 @@ class SulekhaClient:
             requests.Timeout: On timeout
             requests.ConnectionError: On connection failure
         """
-        self._sleep()
-        self.request_count += 1
+        # Acquire rate limit slot (blocks if at capacity)
+        with self._rate_limiter.acquire():
+            # Random delay within configured range
+            self._sleep()
+            self.request_count += 1
 
-        response = self._session.request(
-            method,
-            url,
-            timeout=self.request_timeout,
-            stream=stream,
-            allow_redirects=allow_redirects,
-            **kwargs,
-        )
+            response = self._session.request(
+                method,
+                url,
+                timeout=self.request_timeout,
+                stream=stream,
+                allow_redirects=allow_redirects,
+                **kwargs,
+            )
 
-        # Raise for 5xx errors (will trigger retry)
-        if 500 <= response.status_code < 600:
-            logger.warning("Server error", status_code=response.status_code, url=url)
-            raise requests.HTTPError(f"HTTP {response.status_code}", response=response)
+            # Raise for 5xx errors (will trigger retry)
+            if 500 <= response.status_code < 600:
+                logger.warning("Server error", status_code=response.status_code, url=url)
+                raise requests.HTTPError(f"HTTP {response.status_code}", response=response)
 
-        # Raise for 4xx errors (client errors, no retry)
-        response.raise_for_status()
+            # Raise for 4xx errors (client errors, no retry)
+            response.raise_for_status()
 
-        return response
+            return response
 
     def load_base(self) -> None:
         """Load the base page and initialize form state.

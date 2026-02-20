@@ -247,6 +247,63 @@ class DistrictRepository:
         results = self.session.execute(stmt).all()
         return {str(status.value): count for status, count in results}
 
+    def count_by_year(self) -> dict[str, dict]:
+        """Get count of districts by year with status breakdown."""
+        from sqlalchemy import func
+
+        stmt = (
+            select(
+                District.year_label,
+                District.status,
+                func.count(District.id),
+            )
+            .group_by(District.year_label, District.status)
+            .order_by(District.year_label.desc())
+        )
+        results = self.session.execute(stmt).all()
+        
+        # Organize by year
+        by_year = {}
+        for year_label, status, count in results:
+            if year_label not in by_year:
+                by_year[year_label] = {"total": 0, "done": 0}
+            by_year[year_label]["total"] += count
+            if status.value == "DONE":
+                by_year[year_label]["done"] += count
+        return by_year
+
+    def count_by_year_district(self) -> dict[str, dict[str, dict]]:
+        """Get count of districts by year and district_name with status breakdown."""
+        from sqlalchemy import func
+
+        stmt = (
+            select(
+                District.year_label,
+                District.district_name,
+                District.status,
+                func.count(District.id),
+            )
+            .group_by(District.year_label, District.district_name, District.status)
+            .order_by(District.year_label.desc(), District.district_name)
+        )
+        results = self.session.execute(stmt).all()
+        
+        by_year_district = {}
+        for year_label, district_name, status, count in results:
+            if year_label not in by_year_district:
+                by_year_district[year_label] = {}
+            if district_name not in by_year_district[year_label]:
+                by_year_district[year_label][district_name] = {"total": 0, "done": 0, "in_progress": 0, "pending": 0}
+            by_year_district[year_label][district_name]["total"] += count
+            status_val = status.value.lower()
+            if status_val == "done":
+                by_year_district[year_label][district_name]["done"] += count
+            elif status_val == "in_progress":
+                by_year_district[year_label][district_name]["in_progress"] += count
+            elif status_val == "pending":
+                by_year_district[year_label][district_name]["pending"] += count
+        return by_year_district
+
     def get_random(self, limit: int = 10) -> list[District]:
         """Get random districts.
 
@@ -345,16 +402,20 @@ class LocalBodyRepository:
         return self.session.execute(stmt).scalar_one_or_none()
 
     def get_pending(self, limit: Optional[int] = None) -> list[LocalBody]:
-        """Get local bodies that need project scraping (Phase 3)."""
+        """Get local bodies that need project scraping (Phase 3).
+        
+        Orders by year_val DESC to prioritize latest years first.
+        """
         stmt = (
             select(LocalBody)
+            .join(District, LocalBody.district_id == District.id)
             .where(
                 LocalBody.status.in_(
                     [LocalBodyStatus.PENDING, LocalBodyStatus.PARTIAL, LocalBodyStatus.ERROR]
                 ),
                 LocalBody.retry_count < settings.max_lb_retries,
             )
-            .order_by(LocalBody.district_id, LocalBody.lb_index)
+            .order_by(District.year_val.desc(), LocalBody.district_id, LocalBody.lb_index)
         )
         if limit:
             stmt = stmt.limit(limit)
@@ -386,11 +447,14 @@ class LocalBodyRepository:
         scraped_projects: int,
         total_pages: Optional[int] = None,
     ) -> None:
-        """Update scraping progress for a local body."""
+        """Update scraping progress for a local body.
+        
+        Note: Does NOT change the status - the task should manage status
+        transitions explicitly (IN_PROGRESS at start, DONE at end).
+        """
         values = {
             "last_page_scraped": last_page_scraped,
             "scraped_projects": scraped_projects,
-            "status": LocalBodyStatus.PARTIAL,
             "last_scraped_at": datetime.utcnow(),
         }
         if total_pages is not None:
@@ -436,6 +500,69 @@ class LocalBodyRepository:
         stmt = select(LocalBody.status, func.count(LocalBody.id)).group_by(LocalBody.status)
         results = self.session.execute(stmt).all()
         return {str(status.value): count for status, count in results}
+
+    def count_by_year(self) -> dict[str, dict]:
+        """Get count of local bodies by year with status breakdown."""
+        from sqlalchemy import func
+
+        stmt = (
+            select(
+                District.year_label,
+                LocalBody.status,
+                func.count(LocalBody.id),
+            )
+            .join(District, LocalBody.district_id == District.id)
+            .group_by(District.year_label, LocalBody.status)
+            .order_by(District.year_label.desc())
+        )
+        results = self.session.execute(stmt).all()
+        
+        by_year = {}
+        for year_label, status, count in results:
+            if year_label not in by_year:
+                by_year[year_label] = {"total": 0, "done": 0, "in_progress": 0, "pending": 0}
+            by_year[year_label]["total"] += count
+            status_val = status.value.lower()
+            if status_val == "done":
+                by_year[year_label]["done"] += count
+            elif status_val == "in_progress":
+                by_year[year_label]["in_progress"] += count
+            elif status_val == "pending":
+                by_year[year_label]["pending"] += count
+        return by_year
+
+    def count_by_year_district(self) -> dict[str, dict[str, dict]]:
+        """Get count of local bodies by year and district with status breakdown."""
+        from sqlalchemy import func
+
+        stmt = (
+            select(
+                District.year_label,
+                District.district_name,
+                LocalBody.status,
+                func.count(LocalBody.id),
+            )
+            .join(District, LocalBody.district_id == District.id)
+            .group_by(District.year_label, District.district_name, LocalBody.status)
+            .order_by(District.year_label.desc(), District.district_name)
+        )
+        results = self.session.execute(stmt).all()
+        
+        by_year_district = {}
+        for year_label, district_name, status, count in results:
+            if year_label not in by_year_district:
+                by_year_district[year_label] = {}
+            if district_name not in by_year_district[year_label]:
+                by_year_district[year_label][district_name] = {"total": 0, "done": 0, "in_progress": 0, "pending": 0}
+            by_year_district[year_label][district_name]["total"] += count
+            status_val = status.value.lower()
+            if status_val == "done":
+                by_year_district[year_label][district_name]["done"] += count
+            elif status_val == "in_progress":
+                by_year_district[year_label][district_name]["in_progress"] += count
+            elif status_val == "pending":
+                by_year_district[year_label][district_name]["pending"] += count
+        return by_year_district
 
     def get_random(self, limit: int = 10) -> list[LocalBody]:
         """Get random local bodies.
@@ -558,14 +685,19 @@ class ProjectRepository:
         return self.session.execute(stmt).scalar_one_or_none()
 
     def get_pending_pdfs(self, limit: Optional[int] = None) -> list[Project]:
-        """Get projects that need PDF download (Phase 4)."""
+        """Get projects that need PDF download (Phase 4).
+        
+        Orders by year_val DESC to prioritize latest years first.
+        """
         stmt = (
             select(Project)
+            .join(LocalBody, Project.local_body_id == LocalBody.id)
+            .join(District, LocalBody.district_id == District.id)
             .where(
                 Project.pdf_status.in_([PdfStatus.PENDING, PdfStatus.ERROR]),
                 Project.pdf_retry_count < settings.max_pdf_retries,
             )
-            .order_by(Project.local_body_id, Project.project_no)
+            .order_by(District.year_val.desc(), Project.local_body_id, Project.project_no)
         )
         if limit:
             stmt = stmt.limit(limit)
@@ -632,6 +764,69 @@ class ProjectRepository:
         stmt = select(Project.pdf_status, func.count(Project.id)).group_by(Project.pdf_status)
         results = self.session.execute(stmt).all()
         return {str(status.value): count for status, count in results}
+
+    def count_pdfs_by_year(self) -> dict[str, dict]:
+        """Get count of PDFs by year with status breakdown."""
+        from sqlalchemy import func
+
+        stmt = (
+            select(
+                District.year_label,
+                Project.pdf_status,
+                func.count(Project.id),
+            )
+            .join(LocalBody, Project.local_body_id == LocalBody.id)
+            .join(District, LocalBody.district_id == District.id)
+            .group_by(District.year_label, Project.pdf_status)
+            .order_by(District.year_label.desc())
+        )
+        results = self.session.execute(stmt).all()
+        
+        by_year = {}
+        for year_label, status, count in results:
+            if year_label not in by_year:
+                by_year[year_label] = {
+                    "total": 0, "pending": 0, "downloading": 0,
+                    "downloaded": 0, "missing": 0, "error": 0
+                }
+            by_year[year_label]["total"] += count
+            status_val = status.value.lower()
+            if status_val in by_year[year_label]:
+                by_year[year_label][status_val] += count
+        return by_year
+
+    def count_pdfs_by_year_district(self) -> dict[str, dict[str, dict]]:
+        """Get count of PDFs by year and district with status breakdown."""
+        from sqlalchemy import func
+
+        stmt = (
+            select(
+                District.year_label,
+                District.district_name,
+                Project.pdf_status,
+                func.count(Project.id),
+            )
+            .join(LocalBody, Project.local_body_id == LocalBody.id)
+            .join(District, LocalBody.district_id == District.id)
+            .group_by(District.year_label, District.district_name, Project.pdf_status)
+            .order_by(District.year_label.desc(), District.district_name)
+        )
+        results = self.session.execute(stmt).all()
+        
+        by_year_district = {}
+        for year_label, district_name, status, count in results:
+            if year_label not in by_year_district:
+                by_year_district[year_label] = {}
+            if district_name not in by_year_district[year_label]:
+                by_year_district[year_label][district_name] = {
+                    "total": 0, "pending": 0, "downloading": 0,
+                    "downloaded": 0, "missing": 0, "error": 0
+                }
+            by_year_district[year_label][district_name]["total"] += count
+            status_val = status.value.lower()
+            if status_val in by_year_district[year_label][district_name]:
+                by_year_district[year_label][district_name][status_val] += count
+        return by_year_district
 
     def get_random(self, limit: int = 10) -> list[Project]:
         """Get random projects.

@@ -3,9 +3,13 @@
 Phase 4: Download PDFs for each project and upload to GCS
 """
 
+import re
 from datetime import datetime
+from typing import Optional
+from urllib.parse import urljoin
 
 import structlog
+from bs4 import BeautifulSoup
 
 from sulekha.db.repositories import (
     DistrictRepository,
@@ -19,6 +23,36 @@ from sulekha.storage.gcs import GCSStorage
 from sulekha.tasks.celery_app import celery_app
 
 logger = structlog.get_logger(__name__)
+
+BASE_URL = "https://plan.lsgkerala.gov.in/formulation/Public.aspx"
+
+
+def _find_pdf_url_in_html(soup: BeautifulSoup) -> Optional[str]:
+    """Search for PDF URLs in HTML response.
+    
+    Looks for:
+    - Direct links to .pdf files
+    - iframe/embed/object sources pointing to PDFs
+    
+    Args:
+        soup: BeautifulSoup parsed HTML
+        
+    Returns:
+        PDF URL (may be relative) or None if not found
+    """
+    # Direct links
+    for a in soup.find_all("a"):
+        href = (a.get("href") or "").strip()
+        if href.lower().endswith(".pdf") or ".pdf?" in href.lower():
+            return urljoin(BASE_URL, href)
+
+    # iframe/object/embed src
+    for tag in soup.find_all(["iframe", "embed", "object"]):
+        src = (tag.get("src") or tag.get("data") or "").strip()
+        if src and (src.lower().endswith(".pdf") or ".pdf?" in src.lower() or "pdf" in src.lower()):
+            return urljoin(BASE_URL, src)
+
+    return None
 
 
 @celery_app.task(
@@ -120,52 +154,83 @@ def download_pdf_for_project(self, project_id: str) -> dict:
                 if not result.success:
                     raise Exception(f"Failed to select local body: {result.error}")
 
-                # Navigate to the correct page if needed
-                # For now, we try to click directly; pagination may be needed
-                # in a production implementation
+                # Navigate to the correct page if project is not on page 1
+                if project.page_number and project.page_number > 1:
+                    logger.debug(
+                        "Navigating to project page",
+                        page=project.page_number,
+                        project_no=project.project_no,
+                    )
+                    result = client.postback(
+                        "gvProjects",
+                        f"Page${project.page_number}",
+                    )
+                    if not result.success:
+                        raise Exception(
+                            f"Failed to navigate to page {project.page_number}: {result.error}"
+                        )
 
-                # Click on project to get PDF
+                # Click on project - use stream=True to catch PDF responses
                 result = client.postback(
                     "gvProjects",
                     project.select_argument,
-                    allow_redirects=False,
+                    stream=True,
                 )
 
-                # Check if we got a redirect to PDF
-                redirect_url = None
-                if result.is_redirect and result.redirect_url:
-                    redirect_url = result.redirect_url
-                elif result.response and result.response.status_code == 302:
-                    redirect_url = result.response.headers.get("Location")
+                if not result.success:
+                    raise Exception(f"Failed to click project: {result.error}")
 
-                if not redirect_url:
-                    # Try to find PDF URL in response
+                pdf_bytes = None
+                original_filename = None
+
+                # Check if response is directly a PDF (content-type check)
+                if result.response:
+                    content_type = result.response.headers.get("Content-Type", "").lower()
+                    content_disp = result.response.headers.get("Content-Disposition", "").lower()
+                    
+                    if "application/pdf" in content_type or ".pdf" in content_disp:
+                        # PDF returned directly in response
+                        logger.info("Got PDF directly from postback response")
+                        pdf_bytes = result.response.content
+                        
+                        # Extract filename from Content-Disposition
+                        if "filename=" in content_disp:
+                            match = re.search(r'filename[*]?=["\']?([^"\';\n]+)', content_disp)
+                            if match:
+                                original_filename = match.group(1).strip()
+
+                # If not PDF, look for PDF URL in HTML response
+                if pdf_bytes is None and result.soup:
+                    pdf_url = _find_pdf_url_in_html(result.soup)
+                    if pdf_url:
+                        logger.info("Found PDF URL in HTML", url=pdf_url)
+                        pdf_bytes, original_filename, download_error = client.download_pdf(pdf_url)
+                        if download_error:
+                            raise Exception(f"Failed to download PDF from URL: {download_error}")
+
+                # No PDF found
+                if pdf_bytes is None:
                     logger.warning(
-                        "No redirect found, project may not have PDF",
+                        "No PDF found for project",
                         project_id=project_id,
                     )
                     project_repo.mark_missing(project_id)
                     session.commit()
-                    stats["error"] = "No PDF redirect found"
+                    stats["error"] = "No PDF found"
                     return stats
-
-                logger.info("Got PDF redirect", url=redirect_url)
-
-                # Download PDF
-                pdf_bytes, original_filename, download_error = client.download_pdf(redirect_url)
-
-                if download_error or pdf_bytes is None:
-                    raise Exception(f"Failed to download PDF: {download_error}")
 
                 stats["pdf_downloaded"] = True
                 stats["file_size_bytes"] = len(pdf_bytes)
 
+                # Determine source URL for record-keeping
+                source_url = BASE_URL  # PDF came from postback response
+
                 # Create PDF record
                 pdf_record = pdf_repo.create(
                     project_id=project_id,
-                    original_url=redirect_url,
+                    original_url=source_url,
                     original_filename=original_filename,
-                    redirect_url=redirect_url,
+                    redirect_url=source_url,
                 )
                 pdf_record.downloaded_at = datetime.utcnow()
                 session.commit()

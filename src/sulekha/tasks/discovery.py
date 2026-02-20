@@ -55,43 +55,58 @@ def discover_all_districts(self, scrape_run_id: str = None) -> dict:
             lb_type_count=len(lb_types),
         )
 
-        with get_session() as session:
-            district_repo = DistrictRepository(session)
+        for year_val, year_label in years:
+            # Select year
+            result = client.postback("drpYear", "", updates={"drpYear": year_val})
+            if not result.success:
+                stats["errors"].append(f"Failed to select year {year_label}: {result.error}")
+                continue
 
-            for year_val, year_label in years:
-                # Select year
-                result = client.postback("drpYear", "", updates={"drpYear": year_val})
+            stats["years_processed"] += 1
+
+            for lb_type_val, lb_type_label in lb_types:
+                # Check if this year×lb_type combination already exists (delta check)
+                with get_session() as session:
+                    district_repo = DistrictRepository(session)
+                    existing = district_repo.get_all_for_year_lb(int(year_val), int(lb_type_val))
+                    
+                    if existing:
+                        logger.info(
+                            "Skipping already discovered combination",
+                            year=year_label,
+                            lb_type=lb_type_label,
+                            existing_count=len(existing),
+                        )
+                        stats["lb_types_processed"] += 1
+                        continue
+
+                # Select LB type
+                result = client.postback("drpType", "", updates={"drpType": lb_type_val})
                 if not result.success:
-                    stats["errors"].append(f"Failed to select year {year_label}: {result.error}")
+                    stats["errors"].append(
+                        f"Failed to select LB type {lb_type_label}: {result.error}"
+                    )
                     continue
 
-                stats["years_processed"] += 1
+                stats["lb_types_processed"] += 1
 
-                for lb_type_val, lb_type_label in lb_types:
-                    # Select LB type
-                    result = client.postback("drpType", "", updates={"drpType": lb_type_val})
-                    if not result.success:
-                        stats["errors"].append(
-                            f"Failed to select LB type {lb_type_label}: {result.error}"
-                        )
-                        continue
+                # Parse districts from gvState table
+                if client.soup is None:
+                    continue
 
-                    stats["lb_types_processed"] += 1
+                districts = parse_district_rows(client.soup)
 
-                    # Parse districts from gvState table
-                    if client.soup is None:
-                        continue
+                logger.info(
+                    "Discovered districts",
+                    year=year_label,
+                    lb_type=lb_type_label,
+                    count=len(districts),
+                )
 
-                    districts = parse_district_rows(client.soup)
-
-                    logger.info(
-                        "Discovered districts",
-                        year=year_label,
-                        lb_type=lb_type_label,
-                        count=len(districts),
-                    )
-
-                    # Store districts in database
+                # Store districts in database and commit immediately
+                with get_session() as session:
+                    district_repo = DistrictRepository(session)
+                    
                     for district in districts:
                         district_repo.upsert(
                             year_val=int(year_val),
@@ -106,8 +121,16 @@ def discover_all_districts(self, scrape_run_id: str = None) -> dict:
                             scrape_run_id=scrape_run_id,
                         )
                         stats["districts_discovered"] += 1
-
-            session.commit()
+                    
+                    # Commit after each year×lb_type combination
+                    session.commit()
+                    
+                    logger.info(
+                        "Committed districts to database",
+                        year=year_label,
+                        lb_type=lb_type_label,
+                        count=len(districts),
+                    )
 
     logger.info("Phase 1 complete", **stats)
     return stats

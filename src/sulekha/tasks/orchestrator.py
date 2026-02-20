@@ -260,53 +260,81 @@ def get_progress(self) -> dict:
     """Get current progress of the scraping pipeline.
 
     Returns:
-        Dictionary with progress statistics for all phases
+        Dictionary with progress statistics for all phases, including year-wise breakdowns
     """
-    status = get_pipeline_status()
+    with get_session() as session:
+        district_repo = DistrictRepository(session)
+        lb_repo = LocalBodyRepository(session)
+        project_repo = ProjectRepository(session)
 
-    # Calculate percentages
-    total_districts = sum(status["districts"].values())
-    done_districts = status["districts"].get("DONE", 0)
+        # Get overall status
+        district_status = district_repo.count_by_status()
+        lb_status = lb_repo.count_by_status()
+        pdf_status = project_repo.count_by_pdf_status()
 
-    total_lbs = sum(status["local_bodies"].values())
-    done_lbs = status["local_bodies"].get("DONE", 0)
+        # Get year-wise breakdowns
+        districts_by_year = district_repo.count_by_year()
+        districts_by_year_district = district_repo.count_by_year_district()
+        lbs_by_year = lb_repo.count_by_year()
+        lbs_by_year_district = lb_repo.count_by_year_district()
+        pdfs_by_year = project_repo.count_pdfs_by_year()
+        pdfs_by_year_district = project_repo.count_pdfs_by_year_district()
 
-    total_pdfs = sum(status["pdfs"].values())
-    downloaded_pdfs = status["pdfs"].get("DOWNLOADED", 0)
-    missing_pdfs = status["pdfs"].get("MISSING", 0)
+        # Calculate totals
+        total_districts = sum(district_status.values())
+        done_districts = district_status.get("DONE", 0)
 
-    return {
-        "phase1": {
-            "name": "Discover Districts",
-            "complete": status["phase1_complete"],
-            "total": total_districts,
-            "done": done_districts,
-            "percent": round(done_districts / total_districts * 100, 1) if total_districts > 0 else 0,
-        },
-        "phase2": {
-            "name": "Discover Local Bodies",
-            "complete": status["phase2_complete"],
-            "status": status["districts"],
-        },
-        "phase3": {
-            "name": "Scrape Projects",
-            "complete": status["phase3_complete"],
-            "total": total_lbs,
-            "done": done_lbs,
-            "percent": round(done_lbs / total_lbs * 100, 1) if total_lbs > 0 else 0,
-            "status": status["local_bodies"],
-        },
-        "phase4": {
-            "name": "Download PDFs",
-            "total": total_pdfs,
-            "downloaded": downloaded_pdfs,
-            "missing": missing_pdfs,
-            "percent": round((downloaded_pdfs + missing_pdfs) / total_pdfs * 100, 1)
-            if total_pdfs > 0
-            else 0,
-            "status": status["pdfs"],
-        },
-    }
+        total_lbs = sum(lb_status.values())
+        done_lbs = lb_status.get("DONE", 0)
+
+        total_pdfs = sum(pdf_status.values())
+        downloaded_pdfs = pdf_status.get("DOWNLOADED", 0)
+        missing_pdfs = pdf_status.get("MISSING", 0)
+
+        phase1_complete = district_status.get("DONE", 0) > 0 and district_status.get("PENDING", 0) == 0
+        phase3_complete = pdf_status.get("PENDING", 0) == 0 and pdf_status.get("DOWNLOADED", 0) > 0
+
+        return {
+            "phase1": {
+                "name": "Discover Districts",
+                "complete": total_districts > 0,
+                "total": total_districts,
+                "done": total_districts,
+                "percent": 100.0 if total_districts > 0 else 0,
+            },
+            "phase2": {
+                "name": "Discover Local Bodies",
+                "complete": phase1_complete,
+                "total": total_districts,
+                "done": done_districts,
+                "percent": round(done_districts / total_districts * 100, 1) if total_districts > 0 else 0,
+                "status": district_status,
+                "by_year": districts_by_year,
+                "by_year_district": districts_by_year_district,
+            },
+            "phase3": {
+                "name": "Scrape Projects",
+                "complete": phase3_complete,
+                "total": total_lbs,
+                "done": done_lbs,
+                "percent": round(done_lbs / total_lbs * 100, 1) if total_lbs > 0 else 0,
+                "status": lb_status,
+                "by_year": lbs_by_year,
+                "by_year_district": lbs_by_year_district,
+            },
+            "phase4": {
+                "name": "Download PDFs",
+                "total": total_pdfs,
+                "downloaded": downloaded_pdfs,
+                "missing": missing_pdfs,
+                "percent": round((downloaded_pdfs + missing_pdfs) / total_pdfs * 100, 1)
+                if total_pdfs > 0
+                else 0,
+                "status": pdf_status,
+                "by_year": pdfs_by_year,
+                "by_year_district": pdfs_by_year_district,
+            },
+        }
 
 
 # Beat schedule for automatic pipeline execution

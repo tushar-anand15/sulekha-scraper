@@ -1,12 +1,18 @@
 # Sulekha Data Extraction Service - Docker Compose Configuration
 # 
 # Usage:
-#   docker-compose up -d              # Start all services
-#   docker-compose logs -f worker     # Follow worker logs
-#   docker-compose exec worker sulekha progress  # Check progress
-#   docker-compose down               # Stop all services
-
-version: '3.8'
+#   docker compose up -d                    # Start all services
+#   docker compose --profile migrate up migrate  # Run migrations
+#   docker compose logs -f worker           # Follow worker logs
+#   docker compose exec worker sulekha progress  # Check progress
+#   docker compose up -d --scale worker=4   # Scale workers
+#   docker compose down                     # Stop all services
+#   docker compose down -v                  # Stop and remove volumes
+#
+# Access:
+#   - Flower: http://localhost:5555
+#   - PostgreSQL: localhost:5432 (sulekha/sulekha)
+#   - Redis: localhost:6379
 
 services:
   # PostgreSQL Database
@@ -23,7 +29,7 @@ services:
       - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U sulekha"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
       retries: 5
     restart: unless-stopped
@@ -38,32 +44,41 @@ services:
       - redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
       retries: 5
     restart: unless-stopped
 
   # Celery Worker (Scraping)
+  # Scale with: docker compose up -d --scale worker=4
   worker:
     build: .
-    container_name: sulekha-worker
+    # container_name removed to allow scaling
     command: >
       celery -A sulekha.tasks.celery_app worker
       --loglevel=INFO
-      --concurrency=3
       -Q default,discovery,scraper,pdf,orchestrator
     environment:
       - DATABASE_URL=postgresql+psycopg://sulekha:sulekha@postgres:5432/sulekha
       - REDIS_URL=redis://redis:6379/0
-      - GCS_BUCKET_NAME=${GCS_BUCKET_NAME:-sulekha-pdfs}
-      - GCS_PROJECT_ID=${GCS_PROJECT_ID:-}
+      # GCS Storage Configuration
+      - STORAGE_BACKEND=gcs
+      - GCS_BUCKET_NAME=sulekha-pdfs
+      - GCS_PROJECT_ID=sulekha-487304
       - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials/gcs-key.json
+      # Rate limiting - global concurrency control
+      - RATE_LIMIT_ENABLED=true
+      - RATE_LIMIT_MAX_CONCURRENT=32
+      # Random delay range between requests
+      - SCRAPER_DELAY_MIN=0.5
+      - SCRAPER_DELAY_MAX=1.5
       - LOG_LEVEL=INFO
-      - LOG_FORMAT=json
-      - SCRAPER_MAX_WORKERS=3
-      - CELERY_WORKER_CONCURRENCY=3
+      - LOG_FORMAT=console
+      - CELERY_WORKER_CONCURRENCY=12
     volumes:
-      - ./credentials:/app/credentials:ro
+      - ./src:/app/src:ro
+      - ./scripts:/app/scripts:ro
+      - ./credentials/sulekha-487304-4f5a021dcc1c.json:/app/credentials/gcs-key.json:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -82,8 +97,9 @@ services:
       - DATABASE_URL=postgresql+psycopg://sulekha:sulekha@postgres:5432/sulekha
       - REDIS_URL=redis://redis:6379/0
       - LOG_LEVEL=INFO
-      - LOG_FORMAT=json
+      - LOG_FORMAT=console
     volumes:
+      - ./src:/app/src:ro
       - beat_data:/app
     depends_on:
       postgres:
@@ -100,8 +116,11 @@ services:
       celery -A sulekha.tasks.celery_app flower
       --port=5555
       --broker=redis://redis:6379/0
+      --persistent=True
     environment:
       - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql+psycopg://sulekha:sulekha@postgres:5432/sulekha
+      - STORAGE_BACKEND=gcs
     ports:
       - "5555:5555"
     depends_on:
@@ -113,9 +132,13 @@ services:
     build: .
     container_name: sulekha-migrate
     command: >
-      sh -c "alembic upgrade head && echo 'Migrations complete'"
+      sh -c "
+        python -c 'from sulekha.db.session import init_db; init_db()' &&
+        echo 'Database initialized'
+      "
     environment:
       - DATABASE_URL=postgresql+psycopg://sulekha:sulekha@postgres:5432/sulekha
+      - STORAGE_BACKEND=gcs
     depends_on:
       postgres:
         condition: service_healthy

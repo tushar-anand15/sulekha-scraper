@@ -84,11 +84,17 @@ class Settings(BaseSettings):
         default="https://plan.lsgkerala.gov.in/formulation/Public.aspx",
         description="Base URL for the Sulekha portal",
     )
-    scraper_request_delay: float = Field(
-        default=1.2,
-        ge=0.5,
-        le=10.0,
-        description="Delay between requests in seconds (rate limiting)",
+    scraper_delay_min: float = Field(
+        default=0.5,
+        ge=0.1,
+        le=30.0,
+        description="Minimum delay between requests in seconds (random range)",
+    )
+    scraper_delay_max: float = Field(
+        default=1.5,
+        ge=0.2,
+        le=60.0,
+        description="Maximum delay between requests in seconds (random range)",
     )
     scraper_request_timeout: int = Field(
         default=60,
@@ -115,6 +121,20 @@ class Settings(BaseSettings):
     scraper_backoff_max: float = Field(
         default=180.0,
         description="Maximum backoff time in seconds",
+    )
+
+    # ==========================================================================
+    # Rate Limiting Configuration
+    # ==========================================================================
+    rate_limit_enabled: bool = Field(
+        default=True,
+        description="Enable global rate limiting across all workers",
+    )
+    rate_limit_max_concurrent: int = Field(
+        default=5,
+        ge=1,
+        le=50,
+        description="Maximum concurrent HTTP requests allowed globally",
     )
 
     # ==========================================================================
@@ -151,7 +171,7 @@ class Settings(BaseSettings):
     celery_worker_concurrency: int = Field(
         default=3,
         ge=1,
-        le=10,
+        le=20,
         description="Number of concurrent Celery worker processes",
     )
     celery_task_time_limit: int = Field(
