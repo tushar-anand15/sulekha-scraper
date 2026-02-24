@@ -451,6 +451,53 @@ def run_all_cmd(skip_exists: bool, batch_size: int, max_queue: int):
     click.echo()
 
 
+@main.command("reset-stuck-pdfs")
+@click.option(
+    "--older-than-minutes",
+    default=30,
+    help="Reset projects stuck in DOWNLOADING for longer than this (default: 30)",
+)
+@click.option("--all", "reset_all", is_flag=True, help="Reset ALL DOWNLOADING regardless of age")
+@click.option("--dry-run", is_flag=True, help="Show what would be reset without changing")
+@click.option("--yes", "-y", is_flag=True, help="Skip confirmation")
+def reset_stuck_pdfs_cmd(older_than_minutes: int, reset_all: bool, dry_run: bool, yes: bool):
+    """Reset projects stuck in DOWNLOADING back to PENDING for retry.
+
+    Use when workers were restarted/crashed and left projects orphaned.
+    """
+    import os
+    from sqlalchemy import create_engine, text
+
+    engine = create_engine(os.environ.get("DATABASE_URL", "postgresql+psycopg://sulekha:sulekha@localhost:5432/sulekha"))
+    if reset_all:
+        where = "pdf_status = 'DOWNLOADING'"
+        desc = "all"
+    else:
+        where = f"pdf_status = 'DOWNLOADING' AND (pdf_last_attempt_at IS NULL OR pdf_last_attempt_at < NOW() - INTERVAL '{older_than_minutes} minutes')"
+        desc = f"older than {older_than_minutes} min"
+
+    with engine.connect() as conn:
+        result = conn.execute(text(f"SELECT COUNT(*) FROM projects WHERE {where}"))
+        count = result.scalar() or 0
+
+    if count == 0:
+        click.echo("No stuck projects found.")
+        return
+
+    click.echo(f"Found {count:,} projects stuck in DOWNLOADING ({desc})")
+    if dry_run:
+        click.echo("Dry run - no changes made. Run without --dry-run to reset.")
+        return
+
+    if not yes and not click.confirm("Reset these to PENDING for retry?"):
+        return
+
+    with engine.connect() as conn:
+        result = conn.execute(text(f"UPDATE projects SET pdf_status = 'PENDING' WHERE {where}"))
+        conn.commit()
+        click.echo(f"Reset {result.rowcount:,} projects to PENDING. Run 'make pdfs' to resume.")
+
+
 @main.command("queue-status")
 def queue_status_cmd():
     """Show current Celery queue status."""

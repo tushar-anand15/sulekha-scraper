@@ -883,6 +883,65 @@ class ProjectRepository:
         downloading = counts.get("DOWNLOADING", 0)
         return pending == 0 and downloading == 0
 
+    def get_local_bodies_with_pending_pdfs(self, limit: Optional[int] = None) -> list[str]:
+        """Get local body IDs that have pending PDF downloads.
+        
+        Orders by year_val DESC to prioritize latest years first.
+        Returns distinct local_body_ids.
+        Note: Includes DOWNLOADING status for interrupted tasks.
+        """
+        from sqlalchemy import func
+
+        stmt = (
+            select(Project.local_body_id)
+            .join(LocalBody, Project.local_body_id == LocalBody.id)
+            .join(District, LocalBody.district_id == District.id)
+            .where(
+                Project.pdf_status.in_([PdfStatus.PENDING, PdfStatus.DOWNLOADING, PdfStatus.ERROR]),
+                Project.pdf_retry_count < settings.max_pdf_retries,
+            )
+            .group_by(Project.local_body_id, District.year_val)
+            .order_by(District.year_val.desc())
+        )
+        if limit:
+            stmt = stmt.limit(limit)
+        return list(self.session.execute(stmt).scalars().all())
+
+    def get_pending_pdfs_for_local_body(self, local_body_id: str) -> list[Project]:
+        """Get all pending PDF projects for a specific local body.
+        
+        Orders by page_number to process sequentially.
+        Note: Includes DOWNLOADING status since orchestrator marks them before task runs.
+        """
+        stmt = (
+            select(Project)
+            .where(
+                Project.local_body_id == local_body_id,
+                Project.pdf_status.in_([PdfStatus.PENDING, PdfStatus.DOWNLOADING, PdfStatus.ERROR]),
+                Project.pdf_retry_count < settings.max_pdf_retries,
+            )
+            .order_by(Project.page_number, Project.project_no)
+        )
+        return list(self.session.execute(stmt).scalars().all())
+
+    def mark_local_body_pdfs_downloading(self, local_body_id: str) -> int:
+        """Mark all pending PDFs for a local body as downloading.
+        
+        Returns the number of projects marked.
+        """
+        stmt = (
+            update(Project)
+            .where(
+                Project.local_body_id == local_body_id,
+                Project.pdf_status.in_([PdfStatus.PENDING, PdfStatus.ERROR]),
+                Project.pdf_retry_count < settings.max_pdf_retries,
+            )
+            .values(pdf_status=PdfStatus.DOWNLOADING, pdf_last_attempt_at=datetime.utcnow())
+        )
+        result = self.session.execute(stmt)
+        self.session.expire_all()
+        return result.rowcount
+
 
 # =============================================================================
 # PDF Repository

@@ -1,15 +1,18 @@
 # Sulekha Data Extraction Service - Docker Compose Configuration
 # 
 # Usage:
-#   docker compose up -d                    # Start all services
+#   make up                                 # Start all services with 4 workers (ALWAYS use this)
+#   docker compose up -d --scale worker=4   # Same - scale is NOT persisted, use make up
 #   docker compose --profile migrate up migrate  # Run migrations
 #   docker compose logs -f worker           # Follow worker logs
+#   docker compose logs -f dashboard        # Follow dashboard logs
 #   docker compose exec worker sulekha progress  # Check progress
 #   docker compose up -d --scale worker=4   # Scale workers
 #   docker compose down                     # Stop all services
 #   docker compose down -v                  # Stop and remove volumes
 #
 # Access:
+#   - Dashboard: http://localhost:8765
 #   - Flower: http://localhost:5555
 #   - PostgreSQL: localhost:5432 (sulekha/sulekha)
 #   - Redis: localhost:6379
@@ -50,7 +53,9 @@ services:
     restart: unless-stopped
 
   # Celery Worker (Scraping)
-  # Scale with: docker compose up -d --scale worker=4
+  # IMPORTANT: Scale is NOT persisted. After any "docker compose up", run:
+  #   make scale-workers   (or: docker compose up -d --scale worker=4)
+  # Then run: make restart-workers   (so all 4 workers start together and share tasks)
   worker:
     build: .
     # container_name removed to allow scaling
@@ -58,6 +63,7 @@ services:
       celery -A sulekha.tasks.celery_app worker
       --loglevel=INFO
       -Q default,discovery,scraper,pdf,orchestrator
+      --max-tasks-per-child=100
     environment:
       - DATABASE_URL=postgresql+psycopg://sulekha:sulekha@postgres:5432/sulekha
       - REDIS_URL=redis://redis:6379/0
@@ -108,6 +114,40 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # PDF Orchestrator - keeps the pdf queue fed (must run for workers to have work)
+  orchestrator:
+    build: .
+    container_name: sulekha-orchestrator
+    command: sulekha run-pdfs --batch-size=100 --max-queue=2000
+    environment:
+      - DATABASE_URL=postgresql+psycopg://sulekha:sulekha@postgres:5432/sulekha
+      - REDIS_URL=redis://redis:6379/0
+      - STORAGE_BACKEND=gcs
+    volumes:
+      - ./src:/app/src:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # PDF Dashboard
+  dashboard:
+    build: .
+    container_name: sulekha-dashboard
+    command: python scripts/dashboard.py --port 8765
+    environment:
+      - DATABASE_URL=postgresql+psycopg://sulekha:sulekha@postgres:5432/sulekha
+    volumes:
+      - ./scripts:/app/scripts:ro
+    ports:
+      - "8765:8765"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
   # Flower Monitoring UI
   flower:
     build: .
@@ -117,6 +157,7 @@ services:
       --port=5555
       --broker=redis://redis:6379/0
       --persistent=True
+      --purge_offline_workers=300
     environment:
       - REDIS_URL=redis://redis:6379/0
       - DATABASE_URL=postgresql+psycopg://sulekha:sulekha@postgres:5432/sulekha

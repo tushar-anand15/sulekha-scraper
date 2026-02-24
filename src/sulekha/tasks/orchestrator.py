@@ -337,6 +337,61 @@ def get_progress(self) -> dict:
         }
 
 
+@celery_app.task(
+    bind=True,
+    name="sulekha.tasks.orchestrator.reset_stuck_pdfs",
+)
+def reset_stuck_pdfs(self, older_than_minutes: int = 60) -> dict:
+    """Reset projects stuck in DOWNLOADING back to PENDING for retry.
+
+    Runs periodically via Beat. Projects with pdf_last_attempt_at older than
+    the threshold are considered orphaned (worker crashed/restarted).
+
+    Args:
+        older_than_minutes: Reset projects stuck longer than this (default: 60)
+
+    Returns:
+        Dict with count of projects reset
+    """
+    from sqlalchemy import text
+
+    # Safe: older_than_minutes comes from our beat schedule, not user input
+    interval = f"{older_than_minutes} minutes"
+
+    with get_session() as session:
+        # Count stuck projects
+        result = session.execute(
+            text(f"""
+                SELECT COUNT(*) FROM projects
+                WHERE pdf_status = 'DOWNLOADING'
+                AND (pdf_last_attempt_at IS NULL OR pdf_last_attempt_at < NOW() - INTERVAL '{interval}')
+            """)
+        )
+        count = result.scalar() or 0
+
+        if count == 0:
+            logger.info("reset_stuck_pdfs: no stuck projects found")
+            return {"reset_count": 0}
+
+        # Reset to PENDING
+        result = session.execute(
+            text(f"""
+                UPDATE projects SET pdf_status = 'PENDING'
+                WHERE pdf_status = 'DOWNLOADING'
+                AND (pdf_last_attempt_at IS NULL OR pdf_last_attempt_at < NOW() - INTERVAL '{interval}')
+            """)
+        )
+        reset_count = result.rowcount
+        session.commit()
+
+        logger.info(
+            "reset_stuck_pdfs: reset orphaned projects to PENDING",
+            reset_count=reset_count,
+            older_than_minutes=older_than_minutes,
+        )
+        return {"reset_count": reset_count, "older_than_minutes": older_than_minutes}
+
+
 # Beat schedule for automatic pipeline execution
 celery_app.conf.beat_schedule = {
     # Run the full pipeline daily at 2 AM
@@ -349,5 +404,11 @@ celery_app.conf.beat_schedule = {
     "hourly-progress-check": {
         "task": "sulekha.tasks.orchestrator.get_progress",
         "schedule": 3600,  # 1 hour
+    },
+    # Reset orphaned DOWNLOADING projects every 15 min (auto-recovery after worker restarts/crashes)
+    "reset-stuck-pdfs": {
+        "task": "sulekha.tasks.orchestrator.reset_stuck_pdfs",
+        "schedule": 900,  # 15 minutes
+        "kwargs": {"older_than_minutes": 15},
     },
 }

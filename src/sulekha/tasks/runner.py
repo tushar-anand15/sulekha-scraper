@@ -466,12 +466,17 @@ class PhaseRunner:
         while True:
             # Check current status
             status = self.get_phase4_status()
-            pending = status.pending + status.error
+            # Include in_progress (DOWNLOADING) as work since interrupted tasks leave projects in this state
+            pending = status.pending + status.error + status.in_progress
             in_progress = status.in_progress
 
-            # Exit when no more work
-            if pending == 0 and in_progress == 0:
-                break
+            # Exit when no more work (sleep first so reset-stuck-pdfs can add orphaned projects)
+            if pending == 0:
+                logger.info("No pending work; sleeping 15 min in case reset-stuck-pdfs adds orphaned projects")
+                time.sleep(900)  # 15 min - aligns with reset-stuck-pdfs interval
+                status = self.get_phase4_status()
+                if status.pending + status.error + status.in_progress == 0:
+                    break
 
             # Wait for queue space if needed
             if not can_enqueue("pdf", self.max_queue_size):

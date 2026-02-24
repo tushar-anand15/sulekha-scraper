@@ -33,6 +33,10 @@ dependencies = [
     # Utilities
     "python-dotenv>=1.0",
     "click>=8.1",
+    "flask>=3.0",
+    
+    # Dashboard
+    "streamlit>=1.30",
 ]
 
 [project.scripts]

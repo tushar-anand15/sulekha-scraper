@@ -13,7 +13,7 @@
 #   make test-pipeline   - Run test pipeline with random sampling
 #   make status          - Show pipeline status
 
-.PHONY: help services discovery local_bodies project_tables pdfs pipeline test-pipeline status clean worker
+.PHONY: help up services discovery local_bodies project_tables pdfs pipeline test-pipeline status clean worker scale-workers restart-workers dashboard reset-stuck-pdfs
 
 # =============================================================================
 # Configuration (can be overridden via environment or command line)
@@ -46,10 +46,15 @@ help:
 	@echo "  make test-pipeline    Run test pipeline with random sampling (n=$(SAMPLE_N))"
 	@echo ""
 	@echo "Utilities:"
+	@echo "  make up               Start ALL services with 4 workers (use this, not docker compose up)"
 	@echo "  make services         Start required services (postgres, redis)"
 	@echo "  make worker           Start a Celery worker"
+	@echo "  make scale-workers    Scale to 4 workers (after compose up)"
+	@echo "  make restart-workers  Restart all workers (fixes uneven task distribution)"
 	@echo "  make status           Show pipeline status"
 	@echo "  make queue-status     Show Celery queue status"
+	@echo "  make dashboard        Start PDF dashboard (http://localhost:8765)"
+	@echo "  make reset-stuck-pdfs Reset orphaned DOWNLOADING projects to PENDING"
 	@echo "  make clean            Stop all services"
 	@echo ""
 	@echo "Configuration (override with environment variables):"
@@ -69,6 +74,14 @@ services:
 	@sleep 3
 	@echo "Services started."
 
+# Start ALL services with 4 workers (use this instead of "docker compose up -d")
+# Scale is NOT persisted - always use "make up" to start, never plain "docker compose up"
+up:
+	@echo "Starting all services with 4 workers..."
+	docker compose -f $(COMPOSE_FILE) up -d --scale worker=4
+	@echo "4 workers (48 total) + orchestrator + dashboard + flower running"
+	@echo "Use 'make scale-workers' if you ever see fewer than 4 workers"
+
 stop:
 	@echo "Stopping services..."
 	docker compose -f $(COMPOSE_FILE) down
@@ -86,6 +99,18 @@ clean: stop
 worker: services
 	@echo "Starting Celery worker..."
 	uv run sulekha worker
+
+# Scale to 4 worker containers (run after docker compose up - scale is not persisted)
+scale-workers:
+	@echo "Scaling to 4 workers..."
+	docker compose up -d --scale worker=4
+	@echo "4 workers running (12 concurrency each = 48 total)"
+
+# Restart all workers together so they register and compete for tasks equally
+restart-workers:
+	@echo "Restarting all workers..."
+	docker compose restart worker
+	@echo "Wait ~30s for workers to register, then tasks will distribute across all 4"
 
 # =============================================================================
 # Phase 1: Discovery
@@ -187,6 +212,14 @@ status:
 queue-status:
 	@echo ""
 	uv run sulekha queue-status
+
+dashboard:
+	@echo "Starting PDF dashboard at http://localhost:8765"
+	uv run python scripts/dashboard.py --port 8765
+
+reset-stuck-pdfs:
+	@echo "Resetting projects stuck in DOWNLOADING..."
+	uv run sulekha reset-stuck-pdfs --all -y
 
 # =============================================================================
 # Database Commands
