@@ -245,7 +245,29 @@ def run_for_lb(
             kpi_snapshots_written += 1
 
             # ---- 4 drill-down categories ----
+            # Map category → the KPI counter that gates whether the drill is
+            # worth attempting. When the counter is 0 the portal renders no
+            # GridMeetingDEtails table at all (verified live for cells with
+            # zero ongoing/incomplete/cancelled meetings), so we skip the
+            # request — saves traffic and avoids a spurious ParserError.
+            _kpi_counter_for_category = {
+                CATEGORY_APPROVED: kpi.minutes_complete,
+                CATEGORY_ONGOING: kpi.ongoing,
+                CATEGORY_INCOMPLETE: kpi.minutes_incomplete,
+                CATEGORY_CANCELLED: kpi.cancelled,
+            }
+
             for button, category in _DRILL_SEQUENCE:
+                if _kpi_counter_for_category.get(category, 0) == 0:
+                    log.debug(
+                        "skip_drill_zero_counter",
+                        year_id=year_id,
+                        mg_ddl_value=mg_ddl_value,
+                        category=category,
+                    )
+                    categories_processed += 1
+                    continue
+
                 # Re-establish cascade before each drill (portal replaces
                 # the page after each click_button).
                 try:
