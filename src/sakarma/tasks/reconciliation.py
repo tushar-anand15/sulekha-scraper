@@ -58,6 +58,10 @@ class _Repos:
     reconciliation_repo: ReconciliationRepository
 
 
+# Public alias so callers do not need to reference the private name.
+ReconciliationRepos = _Repos
+
+
 def _kpi_count_for_category(snapshot: Any, category: int) -> int:
     """Map a category constant to the corresponding KPI counter on *snapshot*."""
     if category == CATEGORY_ONGOING:

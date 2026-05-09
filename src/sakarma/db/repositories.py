@@ -249,6 +249,16 @@ class LBProgressRepository:
     def get(self, lb_progress_id: int) -> Optional[LBProgress]:
         return self.session.get(LBProgress, lb_progress_id)
 
+    def get_by_run_lb(
+        self, scrape_run_id: int, lb_id: int
+    ) -> Optional[LBProgress]:
+        """Fetch the progress row for a specific (scrape_run_id, lb_id) pair."""
+        stmt = select(LBProgress).where(
+            LBProgress.scrape_run_id == scrape_run_id,
+            LBProgress.lb_id == lb_id,
+        )
+        return self.session.execute(stmt).scalar_one_or_none()
+
     def mark_in_progress(self, lb_progress_id: int) -> None:
         stmt = (
             update(LBProgress)
