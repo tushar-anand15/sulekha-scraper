@@ -3,7 +3,7 @@
 from logging.config import fileConfig
 
 from alembic import context
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy import engine_from_config, pool, text
 
 from sakarma.config import settings
 from sakarma.db.models import SakarmaBase
@@ -60,6 +60,13 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
+        # Ensure the schema exists before alembic tries to create its
+        # version table inside it. This must happen before context.configure
+        # because alembic creates ``<schema>.alembic_version`` as part of
+        # housekeeping if version_table_schema is set.
+        connection.execute(text("CREATE SCHEMA IF NOT EXISTS sakarma"))
+        connection.commit()
+
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
