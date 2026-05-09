@@ -71,7 +71,12 @@ def _make_form_state(html: bytes = DASHBOARD_HTML) -> FormState:
 
 
 def _make_kpi() -> KPISnapshot:
-    return KPISnapshot(total=6, ongoing=0, minutes_complete=6, minutes_incomplete=0, cancelled=0)
+    # All four counters non-zero so the manifest's KPI-zero-skip optimisation
+    # does not short-circuit the drill-downs. Use distinct values so that
+    # category-specific assertions can disambiguate.
+    return KPISnapshot(
+        total=20, ongoing=2, minutes_complete=6, minutes_incomplete=3, cancelled=9
+    )
 
 
 def _make_manifest_rows(category: int, n: int = 2) -> list[ManifestRow]:
@@ -333,7 +338,9 @@ class TestRunForLbHappy2Years2Groups:
 
 
 class TestRunForLbZeroRows:
-    """Zero meeting rows for a category still writes the KPI snapshot."""
+    """When all KPI counters are 0 the drill-downs are skipped, but the KPI
+    snapshot is still written and the cell counts as "processed" (used by
+    reconciliation as the left-hand side of the diff)."""
 
     def test_kpi_written_with_zero_drill_rows(self):
         from sakarma.tasks.manifest import run_for_lb
@@ -353,16 +360,20 @@ class TestRunForLbZeroRows:
             mock_kpi.return_value = KPISnapshot(
                 total=0, ongoing=0, minutes_complete=0, minutes_incomplete=0, cancelled=0
             )
-            mock_grid.return_value = []  # no rows
+            mock_grid.return_value = []  # would not be called given zero counters
 
             summary = run_for_lb(client, repos, lb_id=303, scrape_run_id=1)
 
         # KPI snapshot still written
         assert repos.dashboard_kpi_snapshot_repo.upsert.call_count == 1
-        # upsert_many still called (with empty list) — returns 0
-        assert repos.meeting_manifest_repo.upsert_many.call_count == 4
+        # All four drill-downs skipped because every counter is 0 → no
+        # upsert_many calls and the parser is never invoked.
+        assert repos.meeting_manifest_repo.upsert_many.call_count == 0
+        assert mock_grid.call_count == 0
         assert summary["manifest_rows_inserted"] == 0
         assert summary["kpi_snapshots"] == 1
+        # Categories still counted as "processed" (skip is an outcome).
+        assert summary["categories_processed"] == 4
 
 
 class TestRunForLbPaginationError:
