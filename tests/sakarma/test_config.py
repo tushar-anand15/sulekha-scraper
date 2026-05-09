@@ -31,12 +31,17 @@ def test_settings_uses_meeting_lsgkerala_default():
     assert s.scraper_dregister_path == "/Pages/PublicDRegister.aspx"
 
 
-def test_settings_does_not_consume_sulekha_prefix(monkeypatch):
-    """Settings ignores SULEKHA_*-prefixed env vars (no cross-tenant leakage)."""
+def test_settings_does_not_consume_sulekha_prefix(monkeypatch, tmp_path):
+    """Settings ignores SULEKHA_*-prefixed env vars (no cross-tenant leakage).
+
+    Isolated from the repo's .env file by chdir-ing into a tmp directory so
+    pydantic-settings doesn't pick up SAKARMA_* values from dev configuration.
+    """
     monkeypatch.setenv("DATABASE_URL", "postgresql://wrong:wrong@h/d")
     monkeypatch.setenv("GCS_BUCKET_NAME", "wrong-bucket")
     monkeypatch.delenv("SAKARMA_DATABASE_URL", raising=False)
     monkeypatch.delenv("SAKARMA_GCS_BUCKET_NAME", raising=False)
+    monkeypatch.chdir(tmp_path)
 
     from sakarma.config import Settings
 

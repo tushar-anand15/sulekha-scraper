@@ -16,12 +16,12 @@ from urllib.parse import urlparse, urlunparse
 
 import pytest
 
-# Set test environment with fallbacks BEFORE any sakarma module imports
-os.environ.setdefault("SAKARMA_STORAGE_BACKEND", "s3")
-os.environ.setdefault("SAKARMA_S3_ENDPOINT_URL", "http://localhost:9000")
-os.environ.setdefault("SAKARMA_S3_ACCESS_KEY", "minioadmin")
-os.environ.setdefault("SAKARMA_S3_SECRET_KEY", "minioadmin")
-os.environ.setdefault("SAKARMA_S3_BUCKET_NAME", "sakarma-test")
+# Set test environment with fallbacks BEFORE any sakarma module imports.
+# Tests default to a "test" GCS bucket name; unit tests use mocked storage
+# (see ``mock_storage`` fixture below) so no real bucket is touched. Integration
+# tests that exercise a real bucket should set SAKARMA_GCS_BUCKET_NAME explicitly
+# before invoking pytest.
+os.environ.setdefault("SAKARMA_STORAGE_BACKEND", "gcs")
 os.environ.setdefault("SAKARMA_GCS_BUCKET_NAME", "sakarma-test")
 os.environ.setdefault(
     "SAKARMA_DATABASE_URL",
