@@ -157,6 +157,10 @@ class MainGroupValueRepository:
         self.session.flush()
         return self.get_by_natural_key(lb_id, ddl_value)
 
+    def get(self, main_group_value_id: int) -> Optional[MainGroupValue]:
+        """Fetch a :class:`MainGroupValue` by its surrogate PK."""
+        return self.session.get(MainGroupValue, main_group_value_id)
+
     def get_by_natural_key(
         self, lb_id: int, ddl_value: int
     ) -> Optional[MainGroupValue]:
@@ -463,6 +467,31 @@ class MeetingManifestRepository:
         )
         return int(self.session.execute(stmt).scalar() or 0)
 
+    def list_approved_for_lb_run(
+        self, lb_id: int, scrape_run_id: int
+    ) -> list[MeetingManifest]:
+        """Return all Approved-category manifest rows for (lb_id, scrape_run_id).
+
+        Ordered by (year_id, main_group_value_id, dashboard_grid_select_index)
+        to mirror the iteration order used during manifest collection.
+        """
+        from sakarma.db.models import CATEGORY_APPROVED as _CAT_APPROVED
+
+        stmt = (
+            select(MeetingManifest)
+            .where(
+                MeetingManifest.lb_id == lb_id,
+                MeetingManifest.scrape_run_id == scrape_run_id,
+                MeetingManifest.category == _CAT_APPROVED,
+            )
+            .order_by(
+                MeetingManifest.year_id,
+                MeetingManifest.main_group_value_id,
+                MeetingManifest.dashboard_grid_select_index,
+            )
+        )
+        return list(self.session.execute(stmt).scalars().all())
+
     def list_groups_for_lb_run(
         self, lb_id: int, scrape_run_id: int
     ) -> list[tuple[int, int, int]]:
@@ -557,6 +586,14 @@ class MeetingArtifactRepository:
             .order_by(MeetingArtifact.artifact_type, MeetingArtifact.decision_index)
         )
         return list(self.session.execute(stmt).scalars().all())
+
+    def exists(self, meeting_manifest_id: int, artifact_type: str) -> bool:
+        """Return True if at least one artifact of *artifact_type* exists for the manifest row."""
+        stmt = select(MeetingArtifact.id).where(
+            MeetingArtifact.meeting_manifest_id == meeting_manifest_id,
+            MeetingArtifact.artifact_type == artifact_type,
+        ).limit(1)
+        return self.session.execute(stmt).scalar_one_or_none() is not None
 
 
 # =============================================================================
