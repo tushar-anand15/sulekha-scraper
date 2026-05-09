@@ -363,6 +363,23 @@ class DashboardKPISnapshotRepository:
         )
         return self.session.execute(stmt).scalar_one_or_none()
 
+    def list_for_lb_run(
+        self, lb_id: int, scrape_run_id: int
+    ) -> list[DashboardKPISnapshot]:
+        """Return all KPI snapshots for a given (lb_id, scrape_run_id) pair."""
+        stmt = (
+            select(DashboardKPISnapshot)
+            .where(
+                DashboardKPISnapshot.lb_id == lb_id,
+                DashboardKPISnapshot.scrape_run_id == scrape_run_id,
+            )
+            .order_by(
+                DashboardKPISnapshot.year_id,
+                DashboardKPISnapshot.main_group_value_id,
+            )
+        )
+        return list(self.session.execute(stmt).scalars().all())
+
 
 class MeetingManifestRepository:
     """Repository for :class:`MeetingManifest` rows."""
@@ -445,6 +462,37 @@ class MeetingManifestRepository:
             MeetingManifest.category == category,
         )
         return int(self.session.execute(stmt).scalar() or 0)
+
+    def list_groups_for_lb_run(
+        self, lb_id: int, scrape_run_id: int
+    ) -> list[tuple[int, int, int]]:
+        """Return distinct (year_id, main_group_value_id, category) tuples
+        for manifest rows belonging to a given (lb_id, scrape_run_id).
+
+        Used by reconciliation to detect manifest groups that have no
+        corresponding KPI snapshot.
+        """
+        stmt = (
+            select(
+                MeetingManifest.year_id,
+                MeetingManifest.main_group_value_id,
+                MeetingManifest.category,
+            )
+            .where(
+                MeetingManifest.lb_id == lb_id,
+                MeetingManifest.scrape_run_id == scrape_run_id,
+            )
+            .distinct()
+            .order_by(
+                MeetingManifest.year_id,
+                MeetingManifest.main_group_value_id,
+                MeetingManifest.category,
+            )
+        )
+        return [
+            (int(row.year_id), int(row.main_group_value_id), int(row.category))
+            for row in self.session.execute(stmt).all()
+        ]
 
 
 # =============================================================================
