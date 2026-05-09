@@ -139,6 +139,16 @@ class LBRepository:
     def get(self, lb_id: int) -> Optional[LB]:
         return self.session.get(LB, lb_id)
 
+    def list_all(self) -> list[LB]:
+        """Return all LBs ordered by id."""
+        stmt = select(LB).order_by(LB.id)
+        return list(self.session.execute(stmt).scalars().all())
+
+    def list_by_district(self, district_id: int) -> list[LB]:
+        """Return all LBs belonging to the given district, ordered by id."""
+        stmt = select(LB).where(LB.district_id == district_id).order_by(LB.id)
+        return list(self.session.execute(stmt).scalars().all())
+
 
 class MainGroupValueRepository:
     """Repository for :class:`MainGroupValue` (per-LB Main Group ddl values)."""
@@ -186,6 +196,23 @@ class ScrapeRunRepository:
         self.session.add(run)
         self.session.flush()
         return run
+
+    def create_backfill(self) -> ScrapeRun:
+        """Create a new backfill scrape run (status=running)."""
+        return self.create(kind="backfill")
+
+    def create_diff(self) -> ScrapeRun:
+        """Create a new diff scrape run (status=running)."""
+        return self.create(kind="diff")
+
+    def list_recent(self, limit: int = 10) -> list[ScrapeRun]:
+        """Return the most recent scrape runs, newest first."""
+        stmt = (
+            select(ScrapeRun)
+            .order_by(ScrapeRun.started_at.desc())
+            .limit(limit)
+        )
+        return list(self.session.execute(stmt).scalars().all())
 
     def get(self, run_id: int) -> Optional[ScrapeRun]:
         return self.session.get(ScrapeRun, run_id)
@@ -647,16 +674,22 @@ class ReconciliationRepository:
         self.session.flush()
         return len(rows)
 
-    def list_for_run(self, scrape_run_id: int) -> list[Reconciliation]:
-        stmt = (
-            select(Reconciliation)
-            .where(Reconciliation.scrape_run_id == scrape_run_id)
-            .order_by(
-                Reconciliation.lb_id,
-                Reconciliation.year_id,
-                Reconciliation.main_group_value_id,
-                Reconciliation.category,
-            )
+    def list_for_run(
+        self,
+        scrape_run_id: int,
+        status_filter: Optional[str] = None,
+    ) -> list[Reconciliation]:
+        """Return reconciliation rows for *scrape_run_id*, optionally filtered by status."""
+        stmt = select(Reconciliation).where(
+            Reconciliation.scrape_run_id == scrape_run_id
+        )
+        if status_filter is not None:
+            stmt = stmt.where(Reconciliation.status == status_filter)
+        stmt = stmt.order_by(
+            Reconciliation.lb_id,
+            Reconciliation.year_id,
+            Reconciliation.main_group_value_id,
+            Reconciliation.category,
         )
         return list(self.session.execute(stmt).scalars().all())
 
