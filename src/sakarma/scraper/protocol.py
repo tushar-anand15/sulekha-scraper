@@ -92,6 +92,7 @@ class FormState:
     last_focus: str = ""
     form_fields: dict[str, str] = field(default_factory=dict)
     page_url: str = ""
+    raw_html: bytes = field(default_factory=bytes)
 
 
 _HIDDEN_FIELDS = (
@@ -118,11 +119,12 @@ def parse_form_state(html_bytes: bytes, page_url: str) -> FormState:
         Populated :class:`FormState`. ``form_fields`` includes every named
         ``<input>`` value plus the currently selected option of every
         ``<select>`` (defaulting to the first option's value if none are
-        marked ``selected``).
+        marked ``selected``). ``raw_html`` is set to ``html_bytes`` verbatim
+        so callers can pass it directly to parsers without a separate fetch.
     """
     soup = BeautifulSoup(html_bytes, "lxml", from_encoding="utf-8")
 
-    state = FormState(page_url=page_url)
+    state = FormState(page_url=page_url, raw_html=html_bytes)
 
     # Hidden ASP.NET fields — searched globally so we tolerate either
     # form-id naming convention. Match by ``name`` (sent on POST) but fall
