@@ -186,6 +186,80 @@ services:
     profiles:
       - migrate
 
+  # ============================================================================
+  # SAKARMA Services (sister scraper for meeting.lsgkerala.gov.in)
+  # Same Postgres + Redis; separate Celery app, queues, GCS bucket.
+  # ============================================================================
+
+  sakarma-worker:
+    build: .
+    command: >
+      celery -A sakarma.tasks.celery_app worker
+      --loglevel=INFO
+      -Q sakarma_orchestrate,sakarma_manifest,sakarma_fetch,sakarma_reconcile,sakarma_discovery,sakarma_default
+      --max-tasks-per-child=50
+    environment:
+      - SAKARMA_DATABASE_URL=postgresql+psycopg://sulekha:sulekha@postgres:5432/sulekha
+      - SAKARMA_REDIS_URL=redis://redis:6379/0
+      - SAKARMA_STORAGE_BACKEND=gcs
+      - SAKARMA_GCS_BUCKET_NAME=${SAKARMA_GCS_BUCKET_NAME:-sakarma-meetings}
+      - SAKARMA_GCS_PROJECT_ID=${SAKARMA_GCS_PROJECT_ID:-}
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials/gcs-key.json
+      - SAKARMA_RATE_LIMIT_ENABLED=true
+      - SAKARMA_RATE_LIMIT_MAX_CONCURRENT=4
+      - SAKARMA_SCRAPER_DELAY_MIN=0.5
+      - SAKARMA_SCRAPER_DELAY_MAX=1.5
+      - SAKARMA_LOG_LEVEL=INFO
+      - SAKARMA_LOG_FORMAT=console
+      - SAKARMA_CELERY_WORKER_CONCURRENCY=4
+    volumes:
+      - ./src:/app/src:ro
+      - ./credentials/sulekha-487304-4f5a021dcc1c.json:/app/credentials/gcs-key.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    profiles:
+      - sakarma
+
+  sakarma-flower:
+    build: .
+    container_name: sakarma-flower
+    command: >
+      celery -A sakarma.tasks.celery_app flower
+      --port=5556
+      --broker=redis://redis:6379/0
+      --persistent=True
+      --purge_offline_workers=300
+    environment:
+      - SAKARMA_REDIS_URL=redis://redis:6379/0
+      - SAKARMA_DATABASE_URL=postgresql+psycopg://sulekha:sulekha@postgres:5432/sulekha
+    ports:
+      - "5556:5556"
+    depends_on:
+      - redis
+    restart: unless-stopped
+    profiles:
+      - sakarma
+
+  sakarma-migrate:
+    build: .
+    container_name: sakarma-migrate
+    command: alembic -c alembic_sakarma.ini upgrade head
+    environment:
+      - SAKARMA_DATABASE_URL=postgresql+psycopg://sulekha:sulekha@postgres:5432/sulekha
+    volumes:
+      - ./src:/app/src:ro
+      - ./alembic_sakarma:/app/alembic_sakarma:ro
+      - ./alembic_sakarma.ini:/app/alembic_sakarma.ini:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - migrate-sakarma
+
 volumes:
   postgres_data:
     driver: local

@@ -245,7 +245,11 @@ test:
 
 test-cov:
 	@echo "Running tests with coverage..."
-	uv run pytest tests/ --cov=sulekha --cov-report=html
+	uv run pytest tests/ --cov=sulekha --cov=sakarma --cov-report=html
+
+test-sakarma:
+	@echo "Running SAKARMA tests..."
+	uv run pytest tests/sakarma/ -v
 
 lint:
 	@echo "Running linter..."
@@ -254,3 +258,45 @@ lint:
 format:
 	@echo "Formatting code..."
 	uv run ruff format src/ tests/
+
+# =============================================================================
+# SAKARMA (sister scraper for meeting.lsgkerala.gov.in)
+# =============================================================================
+
+sakarma-init-db:
+	@echo "Initializing SAKARMA schema (creates 'sakarma' schema in shared DB)..."
+	@uv run alembic -c alembic_sakarma.ini upgrade head
+	@echo "SAKARMA schema initialized."
+
+sakarma-migrate:
+	@echo "Running SAKARMA migrations..."
+	@uv run alembic -c alembic_sakarma.ini upgrade head
+	@echo "SAKARMA migrations complete."
+
+sakarma-migrate-downgrade:
+	@echo "Downgrading SAKARMA schema..."
+	@uv run alembic -c alembic_sakarma.ini downgrade base
+
+sakarma-worker: services
+	@echo "Starting SAKARMA Celery worker..."
+	uv run celery -A sakarma.tasks.celery_app worker \
+		-Q sakarma_orchestrate,sakarma_manifest,sakarma_fetch,sakarma_reconcile,sakarma_discovery,sakarma_default \
+		--loglevel=INFO
+
+sakarma-flower:
+	@echo "Starting SAKARMA Flower at http://localhost:5556..."
+	uv run celery -A sakarma.tasks.celery_app flower --port=5556
+
+sakarma-backfill: services
+	@echo "Starting SAKARMA full backfill..."
+	uv run sakarma backfill
+
+sakarma-diff: services
+	@echo "Starting SAKARMA diff run..."
+	uv run sakarma diff
+
+sakarma-status:
+	@uv run sakarma status
+
+sakarma-reconcile-report:
+	@uv run sakarma reconcile-report
