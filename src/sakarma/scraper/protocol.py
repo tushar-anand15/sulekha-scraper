@@ -145,12 +145,20 @@ def parse_form_state(html_bytes: bytes, page_url: str) -> FormState:
         elif hidden_name == "__LASTFOCUS":
             state.last_focus = value
 
-    # Snapshot every named <input> with a value (hidden + text + submit).
+    # Snapshot every named <input> with a value (hidden + text fields only).
+    # CRITICAL: skip submit/button/image/reset inputs — those are user-clickable
+    # controls whose values must NOT be echoed into postback bodies. Including
+    # e.g. ``btnMod_close=CLOSE`` would cause the server to interpret a generic
+    # __doPostBack as "user clicked CLOSE", which dismisses drill-down views
+    # and returns the bare dashboard instead of processing the intended event.
+    _SUBMIT_TYPES = {"submit", "button", "image", "reset"}
     for inp in soup.find_all("input"):
         name = inp.get("name")
         if not name:
             continue
-        # Skip submit-type inputs unless they have a value we'd want echoed.
+        input_type = (inp.get("type") or "text").lower()
+        if input_type in _SUBMIT_TYPES:
+            continue
         state.form_fields[name] = inp.get("value", "")
 
     # Snapshot every <select>'s currently selected option (or first option).
