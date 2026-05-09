@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+  <meta charset="UTF-8" />
+  <title>Public Decision Register – SAKARMA</title>
+</head>
+<body>
+<form name="aspnetForm" method="post" action="/Pages/PublicDRegister.aspx" id="aspnetForm">
+<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="FAKE_VIEWSTATE_DREGISTER" />
+<input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="ABCD5678" />
+<input type="hidden" name="__VIEWSTATEENCRYPTED" id="__VIEWSTATEENCRYPTED" value="" />
+<input type="hidden" name="__EVENTVALIDATION" id="__EVENTVALIDATION" value="FAKE_EVENTVALIDATION_DREGISTER" />
+<input type="hidden" name="__EVENTTARGET" id="__EVENTTARGET" value="" />
+<input type="hidden" name="__EVENTARGUMENT" id="__EVENTARGUMENT" value="" />
+<input type="hidden" name="__LASTFOCUS" id="__LASTFOCUS" value="" />
+
+<div id="ContentPlaceHolder1">
+
+  <!-- Meeting header metadata -->
+  <div class="meeting-header">
+    <p><strong>ഓച്ചിറ ഗ്രാമ പഞ്ചായത്ത്</strong></p>
+    <p>യോഗ നം: 03/2025 &nbsp; തീയ്യതി: 10/03/2025</p>
+    <p>ഭരണസമിതി യോഗം – അടിയന്തിര യോഗം/പ്രത്യേക യോഗം</p>
+  </div>
+
+  <!-- Decision Register Grid: 3 decisions -->
+  <table id="GrdDecision" cellspacing="0" border="1" style="border-collapse:collapse;">
+    <tr>
+      <th>ക്രമ നം</th>
+      <th>തീരുമാന വിഷയം</th>
+      <th>തീരുമാനം</th>
+      <th>അനുബന്ധരേഖകൾ</th>
+    </tr>
+
+    <!-- Decision 1 (ctl02): no attachment -->
+    <tr>
+      <td>1</td>
+      <td>ബജറ്റ് 2025-26 അംഗീകാരം</td>
+      <td>ഏകകണ്ഠമായി അംഗീകരിച്ചു</td>
+      <td>
+        <!-- No lnkFileView link here -->
+        &nbsp;
+      </td>
+    </tr>
+
+    <!-- Decision 2 (ctl03): empty link text — defensive / lenient case -->
+    <tr>
+      <td>2</td>
+      <td>ഓഫീസ് നവീകരണം</td>
+      <td>തുടരണമെന്ന് തീരുമാനിച്ചു</td>
+      <td>
+        <a id="GrdDecision_ctl03_lnkFileView"
+           href="javascript:__doPostBack('GrdDecision$ctl03$lnkFileView','')"></a>
+      </td>
+    </tr>
+
+    <!-- Decision 3 (ctl04): proper attachment link with Malayalam text -->
+    <tr>
+      <td>3</td>
+      <td>റോഡ് നിർമ്മാണ ടെൻഡർ</td>
+      <td>ടെൻഡർ അംഗീകരിച്ചു</td>
+      <td>
+        <a id="GrdDecision_ctl04_lnkFileView"
+           href="javascript:__doPostBack('GrdDecision$ctl04$lnkFileView','')">അനുബന്ധരേഖകള്‍ കാണുക</a>
+      </td>
+    </tr>
+
+  </table>
+
+</div><!-- /#ContentPlaceHolder1 -->
+</form>
+</body>
+</html>

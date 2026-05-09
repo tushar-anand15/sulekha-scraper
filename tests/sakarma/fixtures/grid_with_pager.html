@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+  <meta charset="UTF-8" />
+  <title>LBWise DashBoard – Grid with Pager – SAKARMA</title>
+</head>
+<body>
+<form name="aspnetForm" method="post" action="/Pages/LBWiseDashBoard.aspx" id="aspnetForm">
+<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="FAKE_VIEWSTATE_PAGER" />
+<input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="ABCD9999" />
+<input type="hidden" name="__VIEWSTATEENCRYPTED" id="__VIEWSTATEENCRYPTED" value="" />
+<input type="hidden" name="__EVENTVALIDATION" id="__EVENTVALIDATION" value="FAKE_EVENTVALIDATION_PAGER" />
+<input type="hidden" name="__EVENTTARGET" id="__EVENTTARGET" value="" />
+<input type="hidden" name="__EVENTARGUMENT" id="__EVENTARGUMENT" value="" />
+<input type="hidden" name="__LASTFOCUS" id="__LASTFOCUS" value="" />
+
+<div id="ContentPlaceHolder1">
+
+  <!-- GridMeetingDEtails with pager footer -->
+  <table id="ctl00_ContentPlaceHolder1_GridMeetingDEtails"
+         cellspacing="0" border="1" style="border-collapse:collapse;">
+    <tr>
+      <th>ക്രമ നം</th>
+      <th>യോഗ നം</th>
+      <th>തീയ്യതി</th>
+      <th>യോഗ തരം</th>
+      <th>യോഗ സ്വഭാവം</th>
+      <th>സ്ഥലം</th>
+      <th>DR</th>
+      <th>Minutes</th>
+    </tr>
+    <!-- 10 data rows (abbreviated for fixture brevity) -->
+    <tr>
+      <td>1</td><td>01/2024</td><td>05/01/2024</td>
+      <td>ഭരണസമിതി യോഗം</td><td>സാധാരണ യോഗം</td><td>ഹാൾ</td>
+      <td><a href="javascript:__doPostBack('ctl00$ContentPlaceHolder1$GridMeetingDEtails$ctl02$lnkDR','')">DR</a></td>
+      <td><a href="javascript:__doPostBack('ctl00$ContentPlaceHolder1$GridMeetingDEtails','Select$0')">Minutes</a></td>
+    </tr>
+    <tr>
+      <td>2</td><td>02/2024</td><td>12/02/2024</td>
+      <td>ഭരണസമിതി യോഗം</td><td>സാധാരണ യോഗം</td><td>ഹാൾ</td>
+      <td><a href="javascript:__doPostBack('ctl00$ContentPlaceHolder1$GridMeetingDEtails$ctl03$lnkDR','')">DR</a></td>
+      <td><a href="javascript:__doPostBack('ctl00$ContentPlaceHolder1$GridMeetingDEtails','Select$1')">Minutes</a></td>
+    </tr>
+    <!-- Pager footer row — this is what triggers pagination detection -->
+    <tr class="pager">
+      <td colspan="8">
+        <table>
+          <tr>
+            <td><span>1</span></td>
+            <td><a href="javascript:__doPostBack('ctl00$ContentPlaceHolder1$GridMeetingDEtails','Page$2')">2</a></td>
+            <td><a href="javascript:__doPostBack('ctl00$ContentPlaceHolder1$GridMeetingDEtails','Page$3')">3</a></td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+</div><!-- /#ContentPlaceHolder1 -->
+</form>
+</body>
+</html>
