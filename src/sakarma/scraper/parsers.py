@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Union
+from typing import Optional, Union
 
 import structlog
 from bs4 import BeautifulSoup
@@ -74,6 +74,54 @@ class KPISnapshot:
     minutes_complete: int
     minutes_incomplete: int
     cancelled: int
+
+
+@dataclass
+class IncompleteSubcounts:
+    """Per-bucket "minutes incomplete" counts visible after the Incomplete
+    drill (``btnInComp_Meetings``) opens its sub-panel.
+
+    The sub-panel exposes two reasons:
+      * general       – minutes drafted but not finalised
+                        (label: ``lblTotalGntc``, button:
+                        ``btnInComplete_Meetings``)
+      * not_started   – minutes entry not yet begun
+                        (label: ``lblTotalPenGntc``, button:
+                        ``btnnotyetstart_Meetings``)
+
+    The dashboard's top-level "minutes_incomplete" KPI equals the sum.
+    """
+
+    general: int
+    not_started: int
+
+    @property
+    def total(self) -> int:
+        return self.general + self.not_started
+
+
+@dataclass
+class CancellationSubcounts:
+    """Per-reason cancellation counts visible inside ``pnlCancel``.
+
+    The Cancelled drill-down (``btnCancelDetails``) renders a panel with three
+    sub-counts and three sub-buttons. Together they decompose the total
+    cancelled count into actionable buckets:
+
+      • quorum         – cancelled because quorum was not met
+      • public_holiday – cancelled due to a public holiday
+      • other          – any other reason
+
+    All three sum to the dashboard's "cancelled" KPI counter.
+    """
+
+    quorum: int
+    public_holiday: int
+    other: int
+
+    @property
+    def total(self) -> int:
+        return self.quorum + self.public_holiday + self.other
 
 
 @dataclass
@@ -254,7 +302,16 @@ def parse_kpi_cards(html: Union[bytes, str]) -> KPISnapshot:
 def parse_meeting_grid(
     html: Union[bytes, str], category: int
 ) -> list[ManifestRow]:
-    """Extract rows from the ``GridMeetingDEtails`` meeting list table.
+    """Extract rows from a ``GridMeetingDEtails`` (or ``GridMeetingDEtails1``)
+    meeting list table.
+
+    There are two grid id variants on the SAKARMA portal:
+      • ``GridMeetingDEtails``  – returned by the synchronous Approved drill
+        (btnAppv_Meetings). Has 8 columns including DR + Minutes links.
+      • ``GridMeetingDEtails1`` – returned inside the MS-AJAX async-postback
+        UpdatePanel delta for Ongoing / Incomplete / Cancellation-sub
+        drill-downs. Same row schema for cols 0-5; cols 6-7 may be absent
+        (those categories have no artifacts).
 
     Column layout (0-based, inside each ``<tr>``):
       0 – serial no (display only; ignored)
@@ -263,31 +320,36 @@ def parse_meeting_grid(
       3 – meeting_type
       4 – meeting_nature
       5 – meeting_venue
-      6 – DR link  → extract lnkDR EVENTTARGET
-      7 – Minutes link → extract Select$N argument
+      6 – DR link  → extract lnkDR EVENTTARGET (only Approved)
+      7 – Minutes link → extract Select$N argument (only Approved)
 
     The header row (contains ``<th>`` cells) is skipped automatically.
     Rows with < 3 columns or an empty date cell are silently skipped.
 
     Args:
         html: Raw HTML bytes or string of the dashboard page after a KPI
-            button postback.
+            button postback, or the panel HTML from an AJAX delta.
         category: SMALLINT category constant (e.g. ``CATEGORY_APPROVED``).
 
     Returns:
         List of :class:`ManifestRow` objects.
 
     Raises:
-        :class:`ParserError`: If the ``GridMeetingDEtails`` table is not
-            present in the page.
+        :class:`ParserError`: If neither grid variant is present in the page.
     """
     soup = _soup(html)
 
-    # The table id in the DOM uses underscores; find by id-suffix for robustness.
-    grid = soup.find(
-        "table",
-        attrs={"id": lambda v: v and v.endswith("GridMeetingDEtails")},
-    )
+    # Accept either the canonical id or the AJAX-delta variant. We match on
+    # id ending with "GridMeetingDEtails" or "GridMeetingDEtails1" so the
+    # ASP.NET ctl00_ContentPlaceHolder1_ prefix doesn't matter.
+    def _matches_grid_id(value: str) -> bool:
+        if not value:
+            return False
+        return value.endswith("GridMeetingDEtails") or value.endswith(
+            "GridMeetingDEtails1"
+        )
+
+    grid = soup.find("table", attrs={"id": _matches_grid_id})
     if grid is None:
         raise ParserError(
             "GridMeetingDEtails table not found — is this a dashboard page after "
@@ -372,6 +434,116 @@ def parse_meeting_grid(
 
 
 # ---------------------------------------------------------------------------
+# parse_incomplete_subcounts
+# ---------------------------------------------------------------------------
+def parse_incomplete_subcounts(
+    html: Union[bytes, str],
+) -> IncompleteSubcounts:
+    """Extract the 2 incomplete sub-counts from the dashboard's incomplete
+    sub-panel.
+
+    Visible after the ``btnInComp_Meetings`` async postback opens the
+    incomplete breakdown panel. Reads the ``lblTotalGntc`` and
+    ``lblTotalPenGntc`` label spans.
+
+    Missing labels resolve to 0 — the parser is lenient because some
+    contexts only render one of the two counters.
+    """
+    soup = _soup(html)
+
+    def _read(elem_id: str) -> int:
+        el = soup.find(id=elem_id)
+        if el is None:
+            return 0
+        return _safe_int(el.get_text(strip=True)) or 0
+
+    return IncompleteSubcounts(
+        general=_read("ctl00_ContentPlaceHolder1_lblTotalGntc"),
+        not_started=_read("ctl00_ContentPlaceHolder1_lblTotalPenGntc"),
+    )
+
+
+# ---------------------------------------------------------------------------
+# parse_cancellation_subcounts
+# ---------------------------------------------------------------------------
+def parse_cancellation_subcounts(
+    html: Union[bytes, str],
+) -> CancellationSubcounts:
+    """Extract the 3 cancellation sub-counts from the ``pnlCancel`` panel.
+
+    Visible only after the synchronous ``btnCancelDetails`` postback. The
+    panel exposes three labels — ``lblTotalcnlQua`` / ``lblTotalcnlPubH`` /
+    ``lblTotalcnlOth`` — whose text is the count for each reason.
+
+    Args:
+        html: Raw HTML bytes or string of the dashboard page after clicking
+            ``btnCancelDetails``.
+
+    Returns:
+        :class:`CancellationSubcounts`. Missing labels are treated as 0.
+
+    Raises:
+        :class:`ParserError`: only if NONE of the three labels are present
+        (i.e., the page hasn't actually been drilled into the cancellation
+        panel — the caller probably didn't click ``btnCancelDetails`` first).
+    """
+    soup = _soup(html)
+
+    def _read(elem_id: str) -> int:
+        el = soup.find(id=elem_id)
+        if el is None:
+            return 0
+        text = el.get_text(strip=True)
+        return _safe_int(text) or 0
+
+    quorum = _read("ctl00_ContentPlaceHolder1_lblTotalcnlQua")
+    public_holiday = _read("ctl00_ContentPlaceHolder1_lblTotalcnlPubH")
+    other = _read("ctl00_ContentPlaceHolder1_lblTotalcnlOth")
+
+    if soup.find(id="ctl00_ContentPlaceHolder1_pnlCancel") is None:
+        raise ParserError(
+            "pnlCancel panel not found — was btnCancelDetails clicked first?"
+        )
+
+    return CancellationSubcounts(
+        quorum=quorum, public_holiday=public_holiday, other=other
+    )
+
+
+# ---------------------------------------------------------------------------
+# parse_window_open_url
+# ---------------------------------------------------------------------------
+
+_WINDOW_OPEN_RE = re.compile(
+    rb"window\.open\(\s*['\"]([^'\"?\s]+)",
+    re.IGNORECASE,
+)
+
+
+def parse_window_open_url(html: Union[bytes, str]) -> Optional[str]:
+    """Return the first ``window.open(...)`` URL emitted by SAKARMA postbacks.
+
+    After a ``Select$N`` row click on the dashboard, the server returns a
+    full-page response whose head contains a ``window.open(...)`` script
+    pointing at the artifact page. The URL differs by lb_type — Grama
+    Panchayats get ``PublicMinutes.aspx``/``PublicDRegister.aspx`` while
+    Municipalities/Corporations get ``PublicCouncilMinutes.aspx``/
+    ``PublicCouncilDRegister.aspx``. Hard-coding either set causes a 500
+    NRE for the wrong LB type, so callers should follow whatever URL the
+    response advertises.
+
+    Returns the path verbatim (``"PublicCouncilMinutes.aspx"`` or
+    ``"Pages/PublicMinutes.aspx"``), or ``None`` if no script is present.
+    """
+    if isinstance(html, str):
+        html = html.encode("utf-8", errors="replace")
+    m = _WINDOW_OPEN_RE.search(html)
+    if not m:
+        return None
+    return m.group(1).decode("utf-8", errors="replace")
+
+
+# ---------------------------------------------------------------------------
 # parse_attachment_links
 # ---------------------------------------------------------------------------
 def parse_attachment_links(
@@ -404,16 +576,22 @@ def parse_attachment_links(
         if id_match is None:
             continue
 
+        # Skip empty <a> tags — those are decisions with no attached file.
+        # Live captures show only links with visible text (e.g. Malayalam
+        # "അനുബന്ധരേഖകള്‍ കാണുക") trigger a real two-step download. Empty
+        # links return the bare DR page HTML which prior runs erroneously
+        # stored as PDFs.
+        if not (a_tag.get_text() or "").strip():
+            continue
+
         raw_index = int(id_match.group(1))
 
-        # Try to extract target from href postback
         href = a_tag.get("href", "")
         pb_match = _POSTBACK_RE.search(href)
         if pb_match:
             target = pb_match.group("target")
         else:
-            # Derive from the id (replace _ with $ in the GrdDecision portion)
-            nn = id_match.group(1)  # zero-padded string e.g. "03"
+            nn = id_match.group(1)
             target = f"GrdDecision$ctl{nn}$lnkFileView"
 
         results.append((raw_index, target))

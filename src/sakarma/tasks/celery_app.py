@@ -30,6 +30,7 @@ celery_app = Celery(
         "sakarma.tasks.discovery",
         "sakarma.tasks.manifest",
         "sakarma.tasks.artifacts",
+        "sakarma.tasks.cell_artifacts",
         "sakarma.tasks.reconciliation",
         "sakarma.tasks.orchestrator",
     ],
@@ -64,7 +65,11 @@ celery_app.conf.update(
         "sakarma.tasks.discovery.*": {"queue": "sakarma_discovery"},
         "sakarma.tasks.manifest.*": {"queue": "sakarma_manifest"},
         "sakarma.tasks.artifacts.*": {"queue": "sakarma_fetch"},
+        "sakarma.tasks.cell_artifacts.*": {"queue": "sakarma_fetch"},
         "sakarma.tasks.reconciliation.*": {"queue": "sakarma_reconcile"},
+        # Route the chord callback to its own queue so it doesn't queue
+        # behind 1000+ scrape_lb tasks in sakarma_orchestrate.
+        "sakarma.tasks.orchestrator._artifacts_complete": {"queue": "sakarma_reconcile"},
         "sakarma.tasks.orchestrator.*": {"queue": "sakarma_orchestrate"},
     },
 

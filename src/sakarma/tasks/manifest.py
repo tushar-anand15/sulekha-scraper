@@ -33,16 +33,33 @@ from sakarma.config import settings
 from sakarma.db.models import (
     CATEGORY_APPROVED,
     CATEGORY_CANCELLED,
+    CATEGORY_CANCELLED_OTHER,
+    CATEGORY_CANCELLED_PUBLIC_HOLIDAY,
+    CATEGORY_CANCELLED_QUORUM,
     CATEGORY_INCOMPLETE,
+    CATEGORY_INCOMPLETE_GENERAL,
+    CATEGORY_INCOMPLETE_NOT_STARTED,
     CATEGORY_ONGOING,
 )
 from sakarma.scraper.client import PaginationDetectedError, SakarmaClient
-from sakarma.scraper.parsers import parse_dropdown_options, parse_kpi_cards, parse_meeting_grid
+from sakarma.scraper.parsers import (
+    ParserError,
+    parse_cancellation_subcounts,
+    parse_dropdown_options,
+    parse_incomplete_subcounts,
+    parse_kpi_cards,
+    parse_meeting_grid,
+)
 from sakarma.scraper.protocol import (
     BTN_APPV_MEETINGS,
     BTN_BEFORE_MEETINGS,
     BTN_CANCEL_DETAILS,
+    BTN_CNL_OTHER,
+    BTN_CNL_PUBLIC_HOLIDAY,
+    BTN_CNL_QUORUM,
+    BTN_INCOMP_GENERAL,
     BTN_INCOMP_MEETINGS,
+    BTN_INCOMP_NOT_STARTED,
     DDL_DISTRICT,
     DDL_LB_NAME,
     DDL_LB_TYPE,
@@ -101,11 +118,392 @@ def _set_year_and_group(
     base_state: FormState,
     year_id: int,
     mg_ddl_value: int,
+    lb_id: int | None = None,
 ) -> FormState:
-    """Apply Year then MainGroup on top of a cascade base state."""
+    """Apply Year then MainGroup on top of a cascade base state.
+
+    The source's ddlYear postback resets ddlLBName to 0 (the cascade UI
+    treats year as a parent of LB). Without re-selecting LB, every KPI
+    reads as 0 because no LB is bound — that's why earlier runs only
+    captured 2025 (the page default for which no postback fires).
+    Pass ``lb_id`` to restore the LB selection after the year postback.
+    """
     state = client.select_dropdown(base_state, DDL_YEAR, str(year_id))
+    if lb_id is not None:
+        state = client.select_dropdown(state, DDL_LB_NAME, str(lb_id))
     state = client.select_dropdown(state, DDL_MAIN_GROUP, str(mg_ddl_value))
     return state
+
+
+# ---------------------------------------------------------------------------
+# Per-category drill helpers
+# ---------------------------------------------------------------------------
+
+def _build_manifest_dict(
+    row,
+    *,
+    lb_id: int,
+    year_id: int,
+    mg_pk: int,
+    category: int,
+    scrape_run_id: int,
+    log,
+) -> dict | None:
+    """Translate a parsed ``ManifestRow`` into the upsert-row dict.
+
+    Returns ``None`` for rows whose date can't be parsed (logs a warning).
+    """
+    parsed_date = _parse_date(row.meeting_date)
+    if parsed_date is None:
+        log.warning(
+            "skipping_row_bad_date",
+            meeting_no_label=row.meeting_no_label,
+            raw_date=row.meeting_date,
+        )
+        return None
+    return {
+        "lb_id": lb_id,
+        "year_id": year_id,
+        "main_group_value_id": mg_pk,
+        "category": category,
+        "dashboard_grid_select_index": row.dashboard_grid_select_index,
+        "dr_postback_target": row.dr_postback_target,
+        "meeting_no_label": row.meeting_no_label,
+        "meeting_date": parsed_date,
+        "meeting_type": row.meeting_type,
+        "meeting_nature": row.meeting_nature,
+        "meeting_venue": row.meeting_venue,
+        "scrape_run_id": scrape_run_id,
+    }
+
+
+def _drill_approved_sync(
+    *, client, pre_drill_state, lb_id, year_id, mg_pk, scrape_run_id, repos, log,
+    error_writer,
+) -> int:
+    """Drill the Approved category synchronously and upsert manifest rows."""
+    try:
+        state_drill = client.click_button(pre_drill_state, BTN_APPV_MEETINGS)
+    except PaginationDetectedError as exc:
+        msg = str(exc)
+        log.error(
+            "pagination_detected",
+            year_id=year_id,
+            category=CATEGORY_APPROVED,
+            error=msg,
+        )
+        error_writer(msg)
+        raise
+
+    try:
+        parsed_rows = parse_meeting_grid(state_drill.raw_html, CATEGORY_APPROVED)
+    except ParserError as exc:
+        log.error(
+            "approved_grid_missing",
+            year_id=year_id,
+            error=str(exc),
+        )
+        raise
+
+    rows_to_insert: list[dict] = []
+    for row in parsed_rows:
+        d = _build_manifest_dict(
+            row,
+            lb_id=lb_id,
+            year_id=year_id,
+            mg_pk=mg_pk,
+            category=CATEGORY_APPROVED,
+            scrape_run_id=scrape_run_id,
+            log=log,
+        )
+        if d is not None:
+            rows_to_insert.append(d)
+    inserted = repos.meeting_manifest_repo.upsert_many(rows_to_insert)
+    log.debug(
+        "approved_drill_done",
+        year_id=year_id,
+        rows_parsed=len(parsed_rows),
+        rows_inserted=inserted,
+    )
+    return inserted
+
+
+def _drill_async_category(
+    *, client, pre_drill_state, button_target: str, category: int,
+    lb_id, year_id, mg_pk, scrape_run_id, repos, log,
+) -> int:
+    """Drill an async-postback-only category (Ongoing / Incomplete) and upsert.
+
+    The AJAX delta refreshes ``UpdatePanelDEstimate`` with a
+    ``GridMeetingDEtails1`` table. Returns the number of manifest rows
+    upserted. Empty grids return 0 (no exception).
+    """
+    async_resp = client.async_postback(pre_drill_state, button_target)
+    panel_html = async_resp.panel_html()
+    if not panel_html.strip():
+        log.debug(
+            "async_drill_empty_delta",
+            year_id=year_id,
+            category=category,
+            button=button_target,
+        )
+        return 0
+    try:
+        parsed_rows = parse_meeting_grid(panel_html, category)
+    except ParserError:
+        # The async drill returned a panel without the canonical grid id —
+        # log the table ids that ARE present so we can extend the parser
+        # if we discover yet another category-specific table id.
+        import os as _os
+        import re as _re
+        seen_ids = _re.findall(rb'<table[^>]*id="([^"]+)"', panel_html)
+        log.warning(
+            "async_drill_no_grid",
+            year_id=year_id,
+            category=category,
+            button=button_target,
+            panel_size=len(panel_html),
+            table_ids_found=[i.decode("utf-8", errors="replace") for i in seen_ids],
+        )
+        # One-shot dump of the first failure so we can examine structure.
+        dump_path = "/tmp/sakarma_no_grid_sample.html"
+        if not _os.path.exists(dump_path):
+            try:
+                with open(dump_path, "wb") as _f:
+                    _f.write(panel_html)
+                log.warning(
+                    "dumped_no_grid_sample",
+                    path=dump_path,
+                    button=button_target,
+                    lb_id=lb_id,
+                    year_id=year_id,
+                )
+            except Exception:
+                pass
+        return 0
+
+    rows_to_insert: list[dict] = []
+    for row in parsed_rows:
+        d = _build_manifest_dict(
+            row,
+            lb_id=lb_id,
+            year_id=year_id,
+            mg_pk=mg_pk,
+            category=category,
+            scrape_run_id=scrape_run_id,
+            log=log,
+        )
+        if d is not None:
+            rows_to_insert.append(d)
+    inserted = repos.meeting_manifest_repo.upsert_many(rows_to_insert)
+    log.debug(
+        "async_drill_done",
+        year_id=year_id,
+        category=category,
+        rows_parsed=len(parsed_rows),
+        rows_inserted=inserted,
+    )
+    return inserted
+
+
+def _drill_incomplete_subbuckets(
+    *, client, pre_drill_state, lb_id, year_id, mg_pk, scrape_run_id, repos, log,
+) -> int:
+    """Drill the Incomplete category — async postback opens a sub-panel
+    revealing two sub-buttons (general / not_started); each non-zero one
+    is then async-clicked to render its meeting list.
+
+    Verified live: ``btnInComp_Meetings`` returns a panel containing
+    ``lblTotalGntc`` and ``lblTotalPenGntc`` counters plus the matching
+    sub-buttons. Each sub-button's async delta carries a
+    ``GridMeetingDEtails1`` table with the actual rows.
+    """
+    log.info("incomplete_drill_start", year_id=year_id, lb_id=lb_id)
+    panel_resp = client.async_postback(pre_drill_state, BTN_INCOMP_MEETINGS)
+    panel_html = panel_resp.panel_html()
+    if not panel_html.strip():
+        log.warning(
+            "incomplete_panel_empty",
+            year_id=year_id,
+            lb_id=lb_id,
+        )
+        return 0
+
+    subcounts = parse_incomplete_subcounts(panel_html)
+    log.info(
+        "incomplete_subcounts",
+        year_id=year_id,
+        general=subcounts.general,
+        not_started=subcounts.not_started,
+    )
+
+    sub_buttons = [
+        (BTN_INCOMP_GENERAL, CATEGORY_INCOMPLETE_GENERAL, subcounts.general),
+        (
+            BTN_INCOMP_NOT_STARTED,
+            CATEGORY_INCOMPLETE_NOT_STARTED,
+            subcounts.not_started,
+        ),
+    ]
+    total = 0
+    # Use the panel's post-async state for follow-up clicks (it carries the
+    # right VIEWSTATE/EVENTVALIDATION for the now-expanded panel).
+    panel_state = panel_resp.to_form_state(pre_drill_state)
+    for button, sub_category, count in sub_buttons:
+        if count == 0:
+            continue
+        total += _drill_async_category(
+            client=client,
+            pre_drill_state=panel_state,
+            button_target=button,
+            category=sub_category,
+            lb_id=lb_id,
+            year_id=year_id,
+            mg_pk=mg_pk,
+            scrape_run_id=scrape_run_id,
+            repos=repos,
+            log=log,
+        )
+    return total
+
+
+def _drill_cancellation_subbuckets(
+    *, client, pre_drill_state, lb_id, year_id, mg_pk, scrape_run_id, repos, log,
+) -> int:
+    """Drill the Cancelled category — opens pnlCancel, then drills into each
+    non-zero sub-bucket via async postback.
+
+    Each cancelled meeting goes into exactly one of three buckets keyed by
+    reason. They become separate manifest rows under the
+    ``CATEGORY_CANCELLED_*`` sub-codes (sum of which equals the dashboard's
+    "cancelled" counter).
+    """
+    log.info("cancellation_drill_start", year_id=year_id, lb_id=lb_id)
+    state_panel = client.click_button(pre_drill_state, BTN_CANCEL_DETAILS)
+    try:
+        subcounts = parse_cancellation_subcounts(state_panel.raw_html)
+    except ParserError as exc:
+        log.warning(
+            "cancellation_panel_missing",
+            year_id=year_id,
+            error=str(exc),
+        )
+        return 0
+
+    log.info(
+        "cancellation_subcounts",
+        year_id=year_id,
+        quorum=subcounts.quorum,
+        public_holiday=subcounts.public_holiday,
+        other=subcounts.other,
+    )
+
+    sub_buttons = [
+        (BTN_CNL_QUORUM, CATEGORY_CANCELLED_QUORUM, subcounts.quorum),
+        (
+            BTN_CNL_PUBLIC_HOLIDAY,
+            CATEGORY_CANCELLED_PUBLIC_HOLIDAY,
+            subcounts.public_holiday,
+        ),
+        (BTN_CNL_OTHER, CATEGORY_CANCELLED_OTHER, subcounts.other),
+    ]
+    total = 0
+    for button, sub_category, count in sub_buttons:
+        if count == 0:
+            continue
+        total += _drill_async_category(
+            client=client,
+            pre_drill_state=state_panel,
+            button_target=button,
+            category=sub_category,
+            lb_id=lb_id,
+            year_id=year_id,
+            mg_pk=mg_pk,
+            scrape_run_id=scrape_run_id,
+            repos=repos,
+            log=log,
+        )
+    return total
+
+
+def _drill_all_categories(
+    *, client, lb_id, year_id, mg_pk, kpi, scrape_run_id, repos, log,
+    error_writer, pre_drill_state: FormState,
+) -> dict:
+    """Process all four KPI categories for a single (lb × year × group) cell.
+
+    Returns ``{"manifest_rows_inserted": int, "categories_processed": int}``.
+    Skips any category whose KPI counter is 0 (verified: the portal renders
+    no grid in that case).
+    """
+    rows_inserted = 0
+    cats_processed = 0
+
+    # Approved (synchronous, has DR/Minutes links — only artifact-bearing cat)
+    if kpi.minutes_complete > 0:
+        rows_inserted += _drill_approved_sync(
+            client=client,
+            pre_drill_state=pre_drill_state,
+            lb_id=lb_id,
+            year_id=year_id,
+            mg_pk=mg_pk,
+            scrape_run_id=scrape_run_id,
+            repos=repos,
+            log=log,
+            error_writer=error_writer,
+        )
+    cats_processed += 1
+
+    # Ongoing (async-only)
+    if kpi.ongoing > 0:
+        rows_inserted += _drill_async_category(
+            client=client,
+            pre_drill_state=pre_drill_state,
+            button_target=BTN_BEFORE_MEETINGS,
+            category=CATEGORY_ONGOING,
+            lb_id=lb_id,
+            year_id=year_id,
+            mg_pk=mg_pk,
+            scrape_run_id=scrape_run_id,
+            repos=repos,
+            log=log,
+        )
+    cats_processed += 1
+
+    # Incomplete — clicking btnInComp_Meetings opens its own sub-panel
+    # (general + not-started buckets); each non-zero sub-bucket has its
+    # own grid behind a follow-up async click.
+    if kpi.minutes_incomplete > 0:
+        rows_inserted += _drill_incomplete_subbuckets(
+            client=client,
+            pre_drill_state=pre_drill_state,
+            lb_id=lb_id,
+            year_id=year_id,
+            mg_pk=mg_pk,
+            scrape_run_id=scrape_run_id,
+            repos=repos,
+            log=log,
+        )
+    cats_processed += 1
+
+    # Cancelled (sync drill into panel, then async per sub-bucket)
+    if kpi.cancelled > 0:
+        rows_inserted += _drill_cancellation_subbuckets(
+            client=client,
+            pre_drill_state=pre_drill_state,
+            lb_id=lb_id,
+            year_id=year_id,
+            mg_pk=mg_pk,
+            scrape_run_id=scrape_run_id,
+            repos=repos,
+            log=log,
+        )
+    cats_processed += 1
+
+    return {
+        "manifest_rows_inserted": rows_inserted,
+        "categories_processed": cats_processed,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -219,7 +617,9 @@ def run_for_lb(
             # ---- (re-)establish full cascade for this year+group ----
             try:
                 base_state = _set_cascade(client, district_id, lb_type_id, lb_id)
-                state_yg = _set_year_and_group(client, base_state, year_id, mg_ddl_value)
+                state_yg = _set_year_and_group(
+                    client, base_state, year_id, mg_ddl_value, lb_id=lb_id
+                )
             except Exception as exc:
                 log.error(
                     "cascade_setup_failed",
@@ -244,107 +644,44 @@ def run_for_lb(
             )
             kpi_snapshots_written += 1
 
-            # ---- 4 drill-down categories ----
-            # Map category → the KPI counter that gates whether the drill is
-            # worth attempting. When the counter is 0 the portal renders no
-            # GridMeetingDEtails table at all (verified live for cells with
-            # zero ongoing/incomplete/cancelled meetings), so we skip the
-            # request — saves traffic and avoids a spurious ParserError.
-            _kpi_counter_for_category = {
-                CATEGORY_APPROVED: kpi.minutes_complete,
-                CATEGORY_ONGOING: kpi.ongoing,
-                CATEGORY_INCOMPLETE: kpi.minutes_incomplete,
-                CATEGORY_CANCELLED: kpi.cancelled,
-            }
-
-            for button, category in _DRILL_SEQUENCE:
-                if _kpi_counter_for_category.get(category, 0) == 0:
-                    log.debug(
-                        "skip_drill_zero_counter",
-                        year_id=year_id,
-                        mg_ddl_value=mg_ddl_value,
-                        category=category,
-                    )
-                    categories_processed += 1
-                    continue
-
-                # Re-establish cascade before each drill (portal replaces
-                # the page after each click_button).
-                try:
-                    pre_drill_state = _set_cascade(
-                        client, district_id, lb_type_id, lb_id
-                    )
-                    pre_drill_state = _set_year_and_group(
-                        client, pre_drill_state, year_id, mg_ddl_value
-                    )
-                except Exception as exc:
-                    log.error(
-                        "pre_drill_cascade_failed",
-                        year_id=year_id,
-                        mg_ddl_value=mg_ddl_value,
-                        category=category,
-                        error=str(exc),
-                    )
-                    raise
-
-                try:
-                    state_drill = client.click_button(pre_drill_state, button)
-                except PaginationDetectedError as exc:
-                    err_msg = str(exc)
-                    log.error(
-                        "pagination_detected",
-                        year_id=year_id,
-                        mg_ddl_value=mg_ddl_value,
-                        category=category,
-                        error=err_msg,
-                    )
-                    # Write error to lb_progress; caller must locate the progress row.
-                    # We surface this via a well-known attribute that the orchestrator
-                    # can look up by (scrape_run_id, lb_id).
-                    _try_write_progress_error(repos, scrape_run_id, lb_id, err_msg)
-                    raise
-
-                # Parse and accumulate rows.
-                parsed_rows = parse_meeting_grid(state_drill.raw_html, category)
-
-                manifest_dicts: list[dict] = []
-                for row in parsed_rows:
-                    parsed_date = _parse_date(row.meeting_date)
-                    if parsed_date is None:
-                        log.warning(
-                            "skipping_row_bad_date",
-                            meeting_no_label=row.meeting_no_label,
-                            raw_date=row.meeting_date,
-                        )
-                        continue
-                    manifest_dicts.append(
-                        {
-                            "lb_id": lb_id,
-                            "year_id": year_id,
-                            "main_group_value_id": mg_pk,
-                            "category": category,
-                            "dashboard_grid_select_index": row.dashboard_grid_select_index,
-                            "dr_postback_target": row.dr_postback_target,
-                            "meeting_no_label": row.meeting_no_label,
-                            "meeting_date": parsed_date,
-                            "meeting_type": row.meeting_type,
-                            "meeting_nature": row.meeting_nature,
-                            "meeting_venue": row.meeting_venue,
-                            "scrape_run_id": scrape_run_id,
-                        }
-                    )
-
-                inserted = repos.meeting_manifest_repo.upsert_many(manifest_dicts)
-                total_manifest_rows += inserted
-                categories_processed += 1
-
-                log.debug(
-                    "category_done",
-                    year_id=year_id,
-                    mg_ddl_value=mg_ddl_value,
-                    category=category,
-                    rows=inserted,
-                )
+            # ---- Per-category drill-downs ----
+            # The portal uses two different rendering paths depending on
+            # the category:
+            #   * Approved (btnAppv_Meetings): synchronous postback returns
+            #     a full page with `GridMeetingDEtails`. Has DR + Minutes
+            #     links per row (only category with artifacts).
+            #   * Ongoing / Incomplete (btnBefore / btnInComp): MS-AJAX
+            #     async postback. Delta refreshes UpdatePanelDEstimate
+            #     with `GridMeetingDEtails1` table. Same row schema for
+            #     cols 0-5; no DR/Minutes link columns.
+            #   * Cancelled (btnCancelDetails): synchronous postback opens
+            #     pnlCancel showing 3 sub-counts. Each non-zero sub-count
+            #     drives an async postback into one of three buttons:
+            #       - btncnlquarum    (cancelled — quorum not met)
+            #       - btnPublicH      (cancelled — public holiday)
+            #       - btnOthersH      (cancelled — other reason)
+            #     Each sub-button's async delta also renders
+            #     `GridMeetingDEtails1` with the per-reason rows.
+            #
+            # KPI-counter zero-skip: when the dashboard counter for a
+            # category is 0 we skip the drill entirely — the AJAX delta
+            # would render no grid (verified live).
+            inserted_for_cell = _drill_all_categories(
+                client=client,
+                lb_id=lb_id,
+                year_id=year_id,
+                mg_pk=mg_pk,
+                kpi=kpi,
+                scrape_run_id=scrape_run_id,
+                repos=repos,
+                log=log,
+                error_writer=lambda msg: _try_write_progress_error(
+                    repos, scrape_run_id, lb_id, msg
+                ),
+                pre_drill_state=state_yg,
+            )
+            total_manifest_rows += inserted_for_cell["manifest_rows_inserted"]
+            categories_processed += inserted_for_cell["categories_processed"]
 
     summary = {
         "kpi_snapshots": kpi_snapshots_written,
@@ -362,11 +699,21 @@ def run_for_lb(
 # ---------------------------------------------------------------------------
 
 def _parse_date(raw: str):
-    """Parse ``DD/MM/YYYY`` → :class:`datetime.date`.  Returns ``None`` on failure."""
-    try:
-        return datetime.strptime(raw.strip(), "%d/%m/%Y").date()
-    except (ValueError, AttributeError):
+    """Parse a meeting date string → :class:`datetime.date`.
+
+    Source uses both ``DD/MM/YYYY`` (recent grids) and ``DD.MM.YYYY``
+    (older grids, observed for 2020-and-earlier rows). Try both before
+    giving up.
+    """
+    if not raw:
         return None
+    s = raw.strip()
+    for fmt in ("%d/%m/%Y", "%d.%m.%Y", "%d-%m-%Y"):
+        try:
+            return datetime.strptime(s, fmt).date()
+        except ValueError:
+            continue
+    return None
 
 
 def _try_write_progress_error(

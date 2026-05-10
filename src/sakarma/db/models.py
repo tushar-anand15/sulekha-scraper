@@ -109,6 +109,23 @@ CATEGORY_ONGOING = 1
 CATEGORY_APPROVED = 2
 CATEGORY_INCOMPLETE = 3
 CATEGORY_CANCELLED = 4
+# Incomplete sub-categories. Clicking ``btnInComp_Meetings`` opens a sub-panel
+# that exposes two further breakdowns:
+#   31 = INCOMPLETE_GENERAL       — minutes drafted but not finalised
+#                                  (button: btnInComplete_Meetings)
+#   32 = INCOMPLETE_NOT_STARTED   — minutes entry not yet begun
+#                                  (button: btnnotyetstart_Meetings,
+#                                  label: lblTotalPenGntc)
+CATEGORY_INCOMPLETE_GENERAL = 31
+CATEGORY_INCOMPLETE_NOT_STARTED = 32
+# Cancellation sub-categories (verified via the pnlCancel panel: each
+# cancelled meeting falls into exactly one bucket — quorum, public holiday,
+# or other). Stored as separate manifest rows so the per-reason breakdown
+# is queryable. The dashboard's top-level "cancelled" KPI counter equals
+# the sum of these three.
+CATEGORY_CANCELLED_QUORUM = 41
+CATEGORY_CANCELLED_PUBLIC_HOLIDAY = 42
+CATEGORY_CANCELLED_OTHER = 43
 
 
 # =============================================================================

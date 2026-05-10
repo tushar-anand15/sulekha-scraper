@@ -260,6 +260,34 @@ services:
     profiles:
       - migrate-sakarma
 
+  # Live dashboard. Bound to 127.0.0.1 only — never exposed publicly.
+  # Access via SSH tunnel:
+  #   gcloud compute ssh sakarma-scraper -- -L 8766:localhost:8766
+  #   open http://localhost:8766
+  sakarma-dashboard:
+    build: .
+    container_name: sakarma-dashboard
+    command: >
+      streamlit run scripts/sakarma_dashboard.py
+      --server.port=8766
+      --server.address=0.0.0.0
+      --server.headless=true
+      --browser.gatherUsageStats=false
+    environment:
+      - SAKARMA_DATABASE_URL=postgresql+psycopg://sulekha:sulekha@postgres:5432/sulekha
+      - SAKARMA_DASHBOARD_REFRESH_SECONDS=30
+    volumes:
+      - ./src:/app/src:ro
+      - ./scripts:/app/scripts:ro
+    ports:
+      - "127.0.0.1:8766:8766"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    profiles:
+      - sakarma
+
 volumes:
   postgres_data:
     driver: local

@@ -157,7 +157,7 @@ class Settings(BaseSettings):
     celery_worker_concurrency: int = Field(
         default=4,
         ge=1,
-        le=20,
+        le=64,
         description="Number of concurrent SAKARMA Celery worker processes",
     )
     celery_task_time_limit: int = Field(

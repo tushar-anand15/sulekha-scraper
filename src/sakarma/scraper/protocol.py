@@ -49,9 +49,56 @@ BTN_INCOMP_MEETINGS = "ctl00$ContentPlaceHolder1$btnInComp_Meetings"  # incomple
 BTN_CANCEL_DETAILS = "ctl00$ContentPlaceHolder1$btnCancelDetails"  # cancelled
 
 # ---------------------------------------------------------------------------
+# Cancellation panel — sub-buttons rendered by btnCancelDetails
+#
+# btnCancelDetails opens an in-place panel (pnlCancel) with three sub-counts
+# and three sub-buttons. Clicking a sub-button does not produce a synchronous
+# response containing the meeting list — it triggers an MS-AJAX async
+# postback whose delta refreshes UpdatePanelDEstimate with a
+# `GridMeetingDEtails1` table (note the trailing ``1`` — distinct from the
+# Approved-Minutes grid).
+# ---------------------------------------------------------------------------
+BTN_CNL_QUORUM = "ctl00$ContentPlaceHolder1$btncnlquarum"
+BTN_CNL_PUBLIC_HOLIDAY = "ctl00$ContentPlaceHolder1$btnPublicH"
+BTN_CNL_OTHER = "ctl00$ContentPlaceHolder1$btnOthersH"
+
+LBL_CNL_QUORUM = "ctl00_ContentPlaceHolder1_lblTotalcnlQua"
+LBL_CNL_PUBLIC_HOLIDAY = "ctl00_ContentPlaceHolder1_lblTotalcnlPubH"
+LBL_CNL_OTHER = "ctl00_ContentPlaceHolder1_lblTotalcnlOth"
+
+PANEL_CANCEL = "ctl00_ContentPlaceHolder1_pnlCancel"
+
+# ---------------------------------------------------------------------------
+# Incomplete sub-panel — same async-postback pattern as Cancellation
+#
+# btnInComp_Meetings opens a sub-panel exposing two sub-buttons:
+#   * btnInComplete_Meetings  — minutes drafted but not finalised (general)
+#   * btnnotyetstart_Meetings — minutes entry not yet started
+#                               (label: lblTotalPenGntc)
+#
+# Both sub-buttons render their meeting list in an async UpdatePanel delta
+# containing a `GridMeetingDEtails1` table. Their counts together equal the
+# dashboard's "minutes_incomplete" KPI counter.
+# ---------------------------------------------------------------------------
+BTN_INCOMP_GENERAL = "ctl00$ContentPlaceHolder1$btnInComplete_Meetings"
+BTN_INCOMP_NOT_STARTED = "ctl00$ContentPlaceHolder1$btnnotyetstart_Meetings"
+
+LBL_INCOMP_GENERAL = "ctl00_ContentPlaceHolder1_lblTotalGntc"
+LBL_INCOMP_NOT_STARTED = "ctl00_ContentPlaceHolder1_lblTotalPenGntc"
+
+# UpdatePanel + ScriptManager identifiers used by async postbacks.
+UPDATE_PANEL_DESTIMATE = "ctl00$ContentPlaceHolder1$UpdatePanelDEstimate"
+SCRIPT_MANAGER_ID = "ctl00$ContentPlaceHolder1$ScriptManager1"
+
+# ---------------------------------------------------------------------------
 # Grid postback fragments
 # ---------------------------------------------------------------------------
+# The Approved-Minutes drill renders this grid id directly on a synchronous
+# postback. The Ongoing / Incomplete / Cancellation-subcategory drills
+# render an alternate grid id ``GridMeetingDEtails1`` inside the
+# UpdatePanelDEstimate AJAX delta — same row shape, different element id.
 GRID_MEETING_DETAILS = "ctl00$ContentPlaceHolder1$GridMeetingDEtails"
+GRID_MEETING_DETAILS_ALT = "ctl00$ContentPlaceHolder1$GridMeetingDEtails1"
 
 
 def grid_select_target() -> str:

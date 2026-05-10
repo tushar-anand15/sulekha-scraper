@@ -529,6 +529,58 @@ class MeetingManifestRepository:
         )
         return list(self.session.execute(stmt).scalars().all())
 
+    def list_approved_cells_for_lb_run(
+        self, lb_id: int, scrape_run_id: int
+    ) -> list[tuple[int, int]]:
+        """Distinct ``(year_id, main_group_value_id)`` cells that have at
+        least one Approved manifest row for this (lb, run). Used by the
+        orchestrator to fan out one cell-task per cell.
+        """
+        from sakarma.db.models import CATEGORY_APPROVED as _CAT_APPROVED
+
+        stmt = (
+            select(
+                MeetingManifest.year_id,
+                MeetingManifest.main_group_value_id,
+            )
+            .where(
+                MeetingManifest.lb_id == lb_id,
+                MeetingManifest.scrape_run_id == scrape_run_id,
+                MeetingManifest.category == _CAT_APPROVED,
+            )
+            .distinct()
+            .order_by(
+                MeetingManifest.year_id, MeetingManifest.main_group_value_id
+            )
+        )
+        return [
+            (int(r.year_id), int(r.main_group_value_id))
+            for r in self.session.execute(stmt).all()
+        ]
+
+    def list_approved_for_cell(
+        self,
+        lb_id: int,
+        scrape_run_id: int,
+        year_id: int,
+        main_group_value_id: int,
+    ) -> list[MeetingManifest]:
+        """Approved manifest rows for a single cell, ordered by row index."""
+        from sakarma.db.models import CATEGORY_APPROVED as _CAT_APPROVED
+
+        stmt = (
+            select(MeetingManifest)
+            .where(
+                MeetingManifest.lb_id == lb_id,
+                MeetingManifest.scrape_run_id == scrape_run_id,
+                MeetingManifest.category == _CAT_APPROVED,
+                MeetingManifest.year_id == year_id,
+                MeetingManifest.main_group_value_id == main_group_value_id,
+            )
+            .order_by(MeetingManifest.dashboard_grid_select_index)
+        )
+        return list(self.session.execute(stmt).scalars().all())
+
     def list_groups_for_lb_run(
         self, lb_id: int, scrape_run_id: int
     ) -> list[tuple[int, int, int]]:
