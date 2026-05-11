@@ -254,6 +254,9 @@ class LBProgress(SakarmaBase):
     completed_at: Mapped[Optional[datetime]] = mapped_column(
         TIMESTAMP(timezone=True), nullable=True
     )
+    manifest_completed_at: Mapped[Optional[datetime]] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=True
+    )
     error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     __table_args__ = (

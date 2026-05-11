@@ -313,6 +313,24 @@ class LBProgressRepository:
         self.session.execute(stmt)
         self.session.expire_all()
 
+    def mark_manifest_done(self, lb_progress_id: int) -> None:
+        """Stamp ``manifest_completed_at`` and move ``current_stage`` to
+        ``manifest_done`` while leaving ``status='in_progress'``.
+
+        Used by Phase 1 of the two-phase scrape so a separate dispatcher
+        can later pick up these LBs and run the artifact-download phase.
+        """
+        stmt = (
+            update(LBProgress)
+            .where(LBProgress.id == lb_progress_id)
+            .values(
+                current_stage="manifest_done",
+                manifest_completed_at=_utcnow(),
+            )
+        )
+        self.session.execute(stmt)
+        self.session.expire_all()
+
     def mark_error(self, lb_progress_id: int, error_message: str) -> None:
         stmt = (
             update(LBProgress)

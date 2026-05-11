@@ -49,28 +49,42 @@ logger = structlog.get_logger(__name__)
     max_retries=3,
     default_retry_delay=60,
 )
-def scrape_lb(self, scrape_run_id: int, lb_id: int) -> dict:
-    """Per-LB orchestration: manifest → artifacts → reconciliation in one Session.
+def scrape_lb(
+    self, scrape_run_id: int, lb_id: int, phase: str = "full"
+) -> dict:
+    """Per-LB orchestration with optional two-phase split.
 
-    Owns the ``requests.Session`` lifetime for this LB.  All three stages share
-    the same session/cookie jar so cross-page session-bound navigation
-    (PublicMinutes / PublicDRegister) works correctly.
+    Supports three phases:
+
+    - ``phase="full"`` (default, legacy): manifest → artifacts chord →
+      reconciliation in one task lifecycle. Identical to pre-two-phase
+      behavior; default so existing enqueues are not affected.
+    - ``phase="manifest_only"``: manifest + reconciliation; skip chord
+      dispatch; stamp ``lb_progress.manifest_completed_at`` and set
+      ``current_stage='manifest_done'``. ``status`` stays
+      ``in_progress`` because artifacts have not yet been fetched.
+    - ``phase="artifacts_only"``: rejected here — the phase-2 dispatch
+      lives in ``scripts/sakarma_dispatch_artifacts.py`` to avoid
+      duplicating the chord-construction logic in two places.
 
     Args:
-        scrape_run_id: PK of the enclosing :class:`~sakarma.db.models.ScrapeRun`.
+        scrape_run_id: PK of the enclosing scrape run.
         lb_id: PK of the local body to scrape.
-
-    Returns:
-        Summary dict with keys ``lb_id``, ``scrape_run_id``, ``manifest``,
-        ``artifacts``, and ``reconciliation``.
+        phase: scraping phase; see above.
 
     Raises:
-        Any exception raised by a stage is re-raised after persisting the error
-        state so that Celery's ``autoretry_for`` mechanism retries the task.
+        ValueError: if ``phase`` is not a recognised value.
     """
+    if phase not in ("full", "manifest_only"):
+        raise ValueError(
+            f"scrape_lb: unsupported phase={phase!r}; use 'full' or "
+            f"'manifest_only' (artifacts_only lives in the dispatcher script)"
+        )
+
     log = logger.bind(
         lb_id=lb_id,
         scrape_run_id=scrape_run_id,
+        phase=phase,
         task_id=self.request.id,
     )
     log.info("scrape_lb.start")
@@ -145,6 +159,35 @@ def scrape_lb(self, scrape_run_id: int, lb_id: int) -> dict:
             # Commit manifest writes + KPI snapshots so partial progress
             # is visible even if artifacts stage fails partway through.
             db_session.commit()
+
+            # ---- Phase 1 short-circuit: manifest-only --------------------
+            # When phase='manifest_only', skip the chord entirely. Run
+            # reconciliation inline (it's pure DB and gives a free health
+            # check) then mark manifest_done and stop. The phase-2
+            # dispatcher will pick this LB up later and fire the chord.
+            if phase == "manifest_only":
+                progress_repo.mark_stage(lb_progress_id, "reconcile")
+                db_session.commit()
+                recon_repos = ReconciliationRepos(
+                    dashboard_kpi_snapshot_repo=kpi_repo,
+                    meeting_manifest_repo=manifest_repo,
+                    reconciliation_repo=recon_repo,
+                )
+                recon_summary = reconciliation.run_for_lb(
+                    recon_repos, lb_id, scrape_run_id
+                )
+                progress_repo.mark_manifest_done(lb_progress_id)
+                db_session.commit()
+                summary = {
+                    "lb_id": lb_id,
+                    "scrape_run_id": scrape_run_id,
+                    "phase": "manifest_only",
+                    "manifest": manifest_summary,
+                    "reconciliation": recon_summary,
+                    "dispatched_cells": 0,
+                }
+                log.info("scrape_lb.manifest_done", **summary)
+                return summary
 
             # ---- Stage: artifacts (fan out via chord) --------------------
             progress_repo.mark_stage(lb_progress_id, "artifacts")
