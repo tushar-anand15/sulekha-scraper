@@ -396,8 +396,12 @@ with hdr:
 st.divider()
 totals = progress_totals(run["id"])
 
-active_count = active_lb_count()
-active_display = active_count if active_count is not None else "—"
+# Cross-check: Celery's per-fork "actively executing" count is a subset
+# of in_progress (others have cells queued but not yet on a fork). Show
+# the in_progress count as the headline so done + active + error +
+# pending == total. Keep Celery-active as a sub-caption so it's still
+# visible without breaking the math.
+active_celery = active_lb_count()
 
 st.subheader("Local Body progress")
 c1, c2, c3, c4, c5 = st.columns(5)
@@ -405,11 +409,20 @@ c1.metric("Total LBs", totals["total"])
 c2.metric("✅ Done", totals["done"])
 c3.metric(
     "🟢 Active",
-    active_display,
-    help="LBs with at least one Celery task currently executing on a worker fork.",
+    totals["in_progress"],
+    help=(
+        "LBs whose lb_progress is in_progress (manifest, artifacts, or "
+        "reconcile stage). A subset are executing on a worker fork right "
+        "now; the rest have cell tasks queued waiting for a fork."
+    ),
 )
 c4.metric("🔴 Error", totals["error"], delta_color="inverse")
 c5.metric("⏳ Pending", totals["pending"])
+if active_celery is not None:
+    st.caption(
+        f"({active_celery} of those have at least one Celery task "
+        f"currently executing on a worker fork.)"
+    )
 
 # Throughput — measured at multiple grains because LB/hr is misleading
 # during multi-year runs (each LB takes much longer than during a single-

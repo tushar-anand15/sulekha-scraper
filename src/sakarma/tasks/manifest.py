@@ -122,16 +122,17 @@ def _set_year_and_group(
 ) -> FormState:
     """Apply Year then MainGroup on top of a cascade base state.
 
-    The source's ddlYear postback resets ddlLBName to 0 (the cascade UI
-    treats year as a parent of LB). Without re-selecting LB, every KPI
-    reads as 0 because no LB is bound — that's why earlier runs only
-    captured 2025 (the page default for which no postback fires).
-    Pass ``lb_id`` to restore the LB selection after the year postback.
+    Both ddlYear AND ddlMainGroup are parents of ddlLBName in the source
+    cascade — every change resets the LB to 0. Re-bind ``lb_id`` after
+    each reset, otherwise KPI counters read 0 (which silently dropped
+    every Standing Committee record on prior runs).
     """
     state = client.select_dropdown(base_state, DDL_YEAR, str(year_id))
     if lb_id is not None:
         state = client.select_dropdown(state, DDL_LB_NAME, str(lb_id))
     state = client.select_dropdown(state, DDL_MAIN_GROUP, str(mg_ddl_value))
+    if lb_id is not None:
+        state = client.select_dropdown(state, DDL_LB_NAME, str(lb_id))
     return state
 
 

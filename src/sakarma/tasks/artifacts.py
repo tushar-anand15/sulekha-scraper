@@ -731,18 +731,20 @@ def _prime_dashboard(
     ``BTN_APPV_MEETINGS`` — i.e. the page that shows the Approved meetings
     grid for this (lb, year, group) combination.
     """
-    # IMPORTANT: ddlYear is a parent of ddlLBName in the source's cascade —
-    # changing year resets ddlLBName to 0, which silently zeros every KPI.
-    # We must re-select LB AFTER the year postback. (Earlier runs only
-    # captured 2025 because that's the page-default year, so re-selecting
-    # 36 fired no postback and the LB stayed bound.)
+    # IMPORTANT: both ddlYear AND ddlMainGroup are parents of ddlLBName in
+    # the source's cascade — changing either resets ddlLBName to 0, which
+    # silently zeros every KPI. We must re-select LB AFTER each postback
+    # that resets it. (The year-only fix recovered Governing Body meetings;
+    # the additional mg re-bind unlocks Standing Committee data — every
+    # mg=4 KPI was 0 before this because ddlLBName was 0 at read time.)
     state = client.load_page(settings.scraper_lbwise_path)
     state = client.select_dropdown(state, DDL_DISTRICT, str(district_id))
     state = client.select_dropdown(state, DDL_LB_TYPE, str(lb_type_id))
     state = client.select_dropdown(state, DDL_LB_NAME, str(lb_id))
     state = client.select_dropdown(state, DDL_YEAR, str(year_id))
-    state = client.select_dropdown(state, DDL_LB_NAME, str(lb_id))  # re-bind after year postback
+    state = client.select_dropdown(state, DDL_LB_NAME, str(lb_id))  # re-bind after year
     state = client.select_dropdown(state, DDL_MAIN_GROUP, str(mg_ddl_value))
+    state = client.select_dropdown(state, DDL_LB_NAME, str(lb_id))  # re-bind after mg
     state = client.click_button(state, BTN_APPV_MEETINGS)
     return state
 
