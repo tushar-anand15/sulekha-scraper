@@ -772,6 +772,40 @@ def _resolve_artifact_path(
     return "/Pages/" + url
 
 
+_META_CHARSET = b'<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />'
+
+
+def _ensure_charset_meta(html_bytes: bytes) -> bytes:
+    """Inject a UTF-8 charset meta tag into ``<head>`` if missing.
+
+    The source server returns UTF-8 bytes but relies on the HTTP
+    ``Content-Type`` header for the encoding declaration — when these
+    files are saved to disk and opened locally, browsers fall back to
+    Latin-1 and Malayalam characters render as mojibake. Adding the
+    ``<meta>`` tag inside the document makes it self-describing so any
+    viewer (local file, gsutil-downloaded copy, archival format
+    conversion) gets the right encoding.
+    """
+    if not html_bytes:
+        return html_bytes
+    # Already declares a charset somewhere in <head>? leave it alone.
+    head_end = html_bytes.find(b"</head>")
+    head_segment = html_bytes[:head_end] if head_end != -1 else html_bytes[:4096]
+    lowered = head_segment.lower()
+    if b"charset=" in lowered:
+        return html_bytes
+    # Insert right after <head ...> opening tag so it sits before any
+    # other element. Fall back to prepending if no <head> exists.
+    head_open_end = html_bytes.find(b">", html_bytes.lower().find(b"<head"))
+    if head_open_end == -1:
+        return _META_CHARSET + html_bytes
+    return (
+        html_bytes[: head_open_end + 1]
+        + _META_CHARSET
+        + html_bytes[head_open_end + 1 :]
+    )
+
+
 def _fetch_minutes(
     client: SakarmaClient,
     state: FormState,
@@ -786,7 +820,7 @@ def _fetch_minutes(
     new_state = client.select_grid_row(state, row.dashboard_grid_select_index)
     path = _resolve_artifact_path(new_state.raw_html, settings.scraper_minutes_path)
     minutes_bytes = client.fetch_public_page(path)
-    return new_state, minutes_bytes
+    return new_state, _ensure_charset_meta(minutes_bytes)
 
 
 def _fetch_dr(
@@ -803,7 +837,7 @@ def _fetch_dr(
     new_state = client.click_dr(state, row.dashboard_grid_select_index)
     path = _resolve_artifact_path(new_state.raw_html, settings.scraper_dregister_path)
     dr_bytes = client.fetch_public_page(path)
-    return new_state, dr_bytes
+    return new_state, _ensure_charset_meta(dr_bytes)
 
 
 def _sha256_hex(data: bytes) -> str:
