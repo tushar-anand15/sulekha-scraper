@@ -1,0 +1,7 @@
+model+schema,schema,n_pdfs,n_errors,notes,mean_in_per_pdf,mean_out_per_pdf,mean_cost_per_pdf,median_cost_per_pdf,p90_cost_per_pdf,p99_cost_per_pdf,max_cost_per_pdf,runaways_(>20k_out),mean_latency_sec,sample_total_spend,corpus_std_raw,corpus_batch_raw,corpus_std_median
+"g3-flash-preview, thinking ON",v1 multi-project,100,0,100 PDFs,15991,15022,0.05306,0.04888,0.07244,0.23261,0.25997,15,144.7,5.306,103554.0,51777.0,95384.0
+"g3-flash-preview, no-think",v1 multi-project,100,0,100 PDFs,15958,2917,0.01673,0.01758,0.02307,0.04822,0.05819,0,30.1,1.673,32654.0,16327.0,34305.0
+"g2.5-flash, no-think",v1 multi-project,10,0,10 PDFs (mini),23847,1148,0.01003,0.01022,0.01276,0.01316,0.01321,0,9.9,0.1,19565.0,9782.0,19949.0
+"g2.5-flash-lite, slim schema",v1 slim,5,0,4 PDFs (killed: runaways),27800,71708,0.03146,0.03134,0.05856,0.05859,0.05859,3,134.1,0.157,61402.0,30701.0,61169.0
+"g2.5-flash, v2 single-project",v2 single-project,100,0,100 PDFs,31606,9448,0.0331,0.01509,0.01824,0.5093,0.51087,5,45.1,3.31,64603.0,32302.0,29445.0
+"g3.1-flash-lite, v2 single-project",v2 single-project,100,0,100 PDFs,23761,2561,0.00978,0.00719,0.01004,0.10914,0.10937,2,12.8,0.978,19092.0,9546.0,14027.0
