@@ -1,0 +1,3 @@
+scenario,n_samples,mean_in_per_pdf,mean_out_per_pdf,mean_thoughts_per_pdf,mean_cost_per_pdf,stratified_total_std,stratified_total_batch
+thinking ON,100,15991.0,15022.4,,0.05306,73012.0,36506.0
+thinking OFF (budget=0),100,15958.6,2582.5,0.0,0.01573,24106.0,12053.0
