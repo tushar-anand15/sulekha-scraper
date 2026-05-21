@@ -1,0 +1,39 @@
+{
+  "total_pages": 4,
+  "total_projects": 1,
+  "document_title": "പതിമൂന്നാം പഞ്ചവത്സര പദ്ധതി പ്രോജക്ട് ഫോം",
+  "document_date": "03/06/2025",
+  "issuing_authority": "തിരുവനന്തപുരം ജില്ലാ പഞ്ചായത്ത്",
+  "projects": [
+    {
+      "project_name": "Daily expenses of State Seed Farm Chirayinkeezhu",
+      "project_cost": 300000.0,
+      "cost_unit": "INR",
+      "cost_raw": "300000",
+      "source_page": 3,
+      "project_category": "Agriculture",
+      "main_area": "Farm Management",
+      "sector": "Agriculture & Irrigation",
+      "sub_sector": "Agricultural Operations",
+      "micro_sector": "Seed Farm Daily Operations"
+    }
+  ],
+  "extraction_summary": "Extracted 1 projects from first 4 pages",
+  "warnings": [
+    "The document appears to be a detailed form for a single public works project rather than a list of multiple projects. The project name is explicitly stated in English on Page 1. The total project cost is derived from the 'ആകെ അടങ്കൽ' (Total Estimate) section on Page 3. The date is extracted from the footer 'Ver 1.0.0 03/06/2025 11:44:31' on Page 1."
+  ],
+  "total_cost": 300000.0,
+  "cost_breakdown_by_category": null,
+  "source_file": "y29__lb1_District_Panchayat__d1_Thiruvananthapuram__p1_Thiruvananthapuram_District_Panchayat__n0001__proj1.pdf",
+  "processed_at": "2026-01-20T11:40:40.149649",
+  "llm_usage": {
+    "input_tokens": 3157,
+    "output_tokens": 770,
+    "total_tokens": 3927,
+    "input_cost_usd": 0.0009471,
+    "output_cost_usd": 0.001925,
+    "total_cost_usd": 0.0028721,
+    "latency_ms": 17045,
+    "model": "gemini-2.5-flash"
+  }
+}

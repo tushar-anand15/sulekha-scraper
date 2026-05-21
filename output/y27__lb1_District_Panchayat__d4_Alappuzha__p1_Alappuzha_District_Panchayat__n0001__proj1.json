@@ -1,0 +1,39 @@
+{
+  "total_pages": 4,
+  "total_projects": 1,
+  "document_title": "Eleventh Five Year Plan Project Form 3 - Public Works",
+  "document_date": "04-12-2023",
+  "issuing_authority": "Alappuzha District Panchayat",
+  "projects": [
+    {
+      "project_name": "Alappuzha District Panchayat 2023-24 Pipe line Extension in various Divisions Via KWA",
+      "project_cost": 30015100.0,
+      "cost_unit": "INR",
+      "cost_raw": "30015100",
+      "source_page": 4,
+      "project_category": "Infrastructure",
+      "main_area": "Water Supply",
+      "sector": "Public Works",
+      "sub_sector": "Water Infrastructure",
+      "micro_sector": "Pipeline Extension"
+    }
+  ],
+  "extraction_summary": "Extracted 1 projects from first 4 pages",
+  "warnings": [
+    "The document is a project form detailing a single public works project. The project name is clearly stated on page 1. The cost is found under 'D. സാമ്പത്തിക വിവരങ്ങൾ' (D. Financial Information) on page 4, listed as 'ആകെ' (Total) for the 'വികസന ഫണ്ട്' (Development Fund). Classification details are inferred from the project name and explicit sections on page 2."
+  ],
+  "total_cost": 30015100.0,
+  "cost_breakdown_by_category": null,
+  "source_file": "y27__lb1_District_Panchayat__d4_Alappuzha__p1_Alappuzha_District_Panchayat__n0001__proj1.pdf",
+  "processed_at": "2026-01-20T11:40:38.734463",
+  "llm_usage": {
+    "input_tokens": 3158,
+    "output_tokens": 634,
+    "total_tokens": 3792,
+    "input_cost_usd": 0.0009474,
+    "output_cost_usd": 0.001585,
+    "total_cost_usd": 0.0025324,
+    "latency_ms": 15784,
+    "model": "gemini-2.5-flash"
+  }
+}
