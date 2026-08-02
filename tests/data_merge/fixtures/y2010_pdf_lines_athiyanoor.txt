@@ -1,0 +1,27 @@
+THIRUVANANTHAPB01003   Athiyanoor      B01003001   Muttacaud            UCHAKKADA SURESH            M   INC      2987
+THIRUVANANTHAPB01003   Athiyanoor      B01003001   Muttacaud            RAJ MOHAN                   M   BJP      1384
+THIRUVANANTHAPB01003   Athiyanoor      B01003001   Muttacaud            T D SASIKUMAR               M   BSP      280
+THIRUVANANTHAPB01003   Athiyanoor      B01003001   Muttacaud            S SUDHEER                   M   CPI      2611
+THIRUVANANTHAPB01003   Athiyanoor      B01003001   Muttacaud            Invalid Vote                             179
+THIRUVANANTHAPB01003   Athiyanoor      B01003002   Peringamala          VALSALA SURENDRAN           F   CPI(M)   2839
+THIRUVANANTHAPB01003   Athiyanoor      B01003002   Peringamala          Invalid Vote                             180
+THIRUVANANTHAPB01003   Athiyanoor      B01003002   Peringamala          JAYAKUMARI K                F   IND      547
+THIRUVANANTHAPB01003   Athiyanoor      B01003002   Peringamala          GEETHA PRABHULLA CHANDRAN   F   INC      3494
+THIRUVANANTHAPB01003   Athiyanoor      B01003003   Pazhattuvila         R BIJU                      M   INC      2367
+THIRUVANANTHAPB01003   Athiyanoor      B01003003   Pazhattuvila         MOHANAN                     M   BJP      825
+THIRUVANANTHAPB01003   Athiyanoor      B01003003   Pazhattuvila         C THANKARAJ                 M   CPI(M)   3774
+THIRUVANANTHAPB01003   Athiyanoor      B01003003   Pazhattuvila         Invalid Vote                             128
+THIRUVANANTHAPB01003   Athiyanoor      B01003004   Avanakuzhi           VIJI V                      F   BSP      1031
+THIRUVANANTHAPB01003   Athiyanoor      B01003004   Avanakuzhi           MARIYAMMA KESARI            F   CPI(M)   2610
+THIRUVANANTHAPB01003   Athiyanoor      B01003004   Avanakuzhi           Invalid Vote                             160
+THIRUVANANTHAPB01003   Athiyanoor      B01003004   Avanakuzhi           SREEKUMARI JAYARAJAN        F   INC      2266
+THIRUVANANTHAPB01003   Athiyanoor      B01003005   Kamukincodu          N RAJAMOHAN                 M   INC      1456
+THIRUVANANTHAPB01003   Athiyanoor      B01003005   Kamukincodu          Invalid Vote                             134
+THIRUVANANTHAPB01003   Athiyanoor      B01003005   Kamukincodu          SURESH KUMAR                M   IND      454
+THIRUVANANTHAPB01003   Athiyanoor      B01003005   Kamukincodu          P MAHESWARAN                M   BJP      668
+THIRUVANANTHAPB01003   Athiyanoor      B01003005   Kamukincodu          K P SASIDHARAN NAIR         M   CPI(M)   3125
+THIRUVANANTHAPB01003   Athiyanoor   B01003005   Kamukincodu     J R SANTHOSH KUMAR        M   IND       21
+THIRUVANANTHAPB01003   Athiyanoor   B01003006   Venpakal        L AMBIKA                  M   INC      2783
+THIRUVANANTHAPB01003   Athiyanoor   B01003006   Venpakal        KOMALAM S                 F   CPI(M)   3171
+THIRUVANANTHAPB01003   Athiyanoor   B01003006   Venpakal        I SREELATHA               F   BJP      683
+THIRUVANANTHAPB01003   Athiyanoor   B01003006   Venpakal        Invalid Vote                           162

@@ -30,6 +30,10 @@ output/
 sulekha_notes/
 refs/
 
+# Elections raw sources and rebuilt outputs: ~2.9 GB of caches plus the 813 MB
+# 2010 HTML mirror. Reconstructed from refs/Elections.zip -- see the runbook.
+data/
+
 # macOS
 .DS_Store
 **/.DS_Store

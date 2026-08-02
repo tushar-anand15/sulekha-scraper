@@ -1,0 +1,56 @@
+ALAPPUZHA   B04031    Thykkattussery   B04031001     Arookkutty        Invalid Vote                                          143
+ALAPPUZHA   B04031    Thykkattussery   B04031001     Arookkutty        ABIDA ASSIS                    F     IND          2138
+ALAPPUZHA   B04031    Thykkattussery   B04031001     Arookkutty        SAPHIYA ISHAQ                  F     IND              635
+ALAPPUZHA   B04031    Thykkattussery   B04031001     Arookkutty        SMITHA UNNIKRISHNAN            F     BJP              220
+ALAPPUZHA   B04031    Thykkattussery   B04031001     Arookkutty        SONA JAYADEVAN                 F     INC          2960
+ALAPPUZHA   B04031    Thykkattussery   B04031002     Perumbalam        Invalid Vote                                          116
+ALAPPUZHA   B04031    Thykkattussery   B04031002     Perumbalam        SAROJINI AMMA                  F     INC          2845
+ALAPPUZHA   B04031    Thykkattussery   B04031002     Perumbalam        ADV. SINIMOL. T.K              F     CPI(M)       3725
+ALAPPUZHA   B04031    Thykkattussery   B04031003     Vazhatharaveli    VISHWAMBHARAN                  M     IND              265
+ALAPPUZHA   B04031    Thykkattussery   B04031003     Vazhatharaveli    K. RAJAN                       M     INC          2683
+ALAPPUZHA   B04031    Thykkattussery   B04031003     Vazhatharaveli    RATHNAPPAN                     M     CPI(M)       2283
+ALAPPUZHA   B04031    Thykkattussery   B04031003     Vazhatharaveli    Invalid Vote                                          129
+ALAPPUZHA   B04031    Thykkattussery   B04031004     Poochakkal        Invalid Vote                                          111
+ALAPPUZHA   B04031    Thykkattussery   B04031004     Poochakkal        T.P. HARIDASAN                 M     IND              161
+ALAPPUZHA   B04031    Thykkattussery   B04031004     Poochakkal        ADV. D. SURESH BABU            M     CPI          2726
+ALAPPUZHA   B04031    Thykkattussery   B04031004     Poochakkal        RADHAKRISHNAN NILACHIRA        M     INC          2175
+ALAPPUZHA   B04031    Thykkattussery   B04031005     Thevarvattom      MINI TEACHER                   F     INC          2414
+ALAPPUZHA   B04031    Thykkattussery   B04031005     Thevarvattom      SHERLY KALESHAN                F     CPI          1783
+ALAPPUZHA   B04031    Thykkattussery   B04031005     Thevarvattom      Invalid Vote                                          126
+ALAPPUZHA   B04031    Thykkattussery   B04031006     Makkekadavu       Invalid Vote                                          115
+ALAPPUZHA   B04031    Thykkattussery   B04031006     Makkekadavu       G. SHAIJU                      M     CPI          2764
+ALAPPUZHA   B04031    Thykkattussery   B04031006     Makkekadavu       S.REMESH KUMAR                 M     BJP              280
+ALAPPUZHA   B04031    Thykkattussery   B04031006     Makkekadavu       T.G.REGHUNADHAN PILLAI( THOTTATHM    INC          1938
+ALAPPUZHA   B04031    Thykkattussery   B04031006     Makkekadavu       BHARGAVAN PILLAI               M     IND              75
+ALAPPUZHA   B04031    Thykkattussery   B04031007     Pallippuram       NICY BENNY                     F     INC          2202
+ALAPPUZHA   B04031    Thykkattussery   B04031007     Pallippuram       RADHAMMA POOPPALLIL            F     CPI(M)       2432
+ALAPPUZHA   B04031    Thykkattussery   B04031007     Pallippuram       SAJIMOL PRADEEP                F     BJP              444
+ALAPPUZHA   B04031    Thykkattussery   B04031007     Pallippuram       Invalid Vote                                          168
+ALAPPUZHA   B04031    Thykkattussery   B04031008     Thirunelloor      Invalid Vote                                          162
+ALAPPUZHA   B04031    Thykkattussery   B04031008     Thirunelloor      SABEENA .V                     F     INC          2563
+ALAPPUZHA   B04031    Thykkattussery   B04031008     Thirunelloor      BEENA SURESH                   F     CPI(M)       2330
+ALAPPUZHA   B04031    Thykkattussery   B04031008     Thirunelloor      AMBILY MADHU                   F     BJP              632
+ALAPPUZHA   B04031    Thykkattussery   B04031009     Palluveli         Invalid Vote                                          120
+ALAPPUZHA   B04031    Thykkattussery   B04031009     Palluveli         JAYASREE RAJU                  F     BJP              345
+ALAPPUZHA   B04031    Thykkattussery   B04031009     Palluveli         ASHA NARAYANAN                 F     CPI          1937
+ALAPPUZHA   B04031    Thykkattussery   B04031009     Palluveli         AJITHA AMBUJAKSHAN             F     INC          1960
+ALAPPUZHA   B04031    Thykkattussery   B04031010     Thykkattussery    SHEEBA JOSE                    F     INC          2663
+ALAPPUZHA   B04031    Thykkattussery   B04031010     Thykkattussery    R.SULOCHANA DEVI               F     CPI          2683
+ALAPPUZHA   B04031    Thykkattussery   B04031010     Thykkattussery    Invalid Vote                                          112
+ALAPPUZHA   B04031    Thykkattussery   B04031011     Thaliyaparambu    Invalid Vote                                          131
+ALAPPUZHA   B04031    Thykkattussery   B04031011     Thaliyaparambu    SURESH KUMAR (RATHEESAN)       M     BJP              329
+ALAPPUZHA   B04031    Thykkattussery   B04031011     Thaliyaparambu    SAJAN KOLUTHARA                M     INC          2086
+ALAPPUZHA   B04031    Thykkattussery   B04031011     Thaliyaparambu    SARASAN NARAYANAN              M     IND              41
+ALAPPUZHA   B04031    Thykkattussery   B04031011     Thaliyaparambu    ADV. SANAL.P.RAJ               M     CPI(M)       2361
+ALAPPUZHA   B04031    Thykkattussery   B04031011     Thaliyaparambu    K.A. KUTTAPPAN THALAYOLAPARAMBM      BSP              13
+ALAPPUZHA   B04031    Thykkattussery   B04031012     Thrichattukulam   Invalid Vote                                          93
+ALAPPUZHA   B04031    Thykkattussery   B04031012     Thrichattukulam   C.T. VENUGOPALAN               M     IND              234
+ALAPPUZHA   B04031    Thykkattussery   B04031012     Thrichattukulam   C.P. VINODKUMAR (VINU)         M     INC          2160
+ALAPPUZHA   B04031    Thykkattussery   B04031012     Thrichattukulam   B.VINOD                        M     CPI(M)       2136
+ALAPPUZHA   B04031    Thykkattussery   B04031012     Thrichattukulam   ABDUL SHUKKOOR                 M     IND              102
+ALAPPUZHA   B04031    Thykkattussery   B04031013     Naduvathnagar     Invalid Vote                                          123
+ALAPPUZHA   B04031    Thykkattussery   B04031013     Naduvathnagar     K.M. SIRAJ                     M     SDPI             85
+ALAPPUZHA   B04031   Thykkattussery   B04031013   Naduvathnagar   SIJITH                          M   BJP      157
+ALAPPUZHA   B04031   Thykkattussery   B04031013   Naduvathnagar   ADV. SHABEER AHAMMAD            M   IND      347
+ALAPPUZHA   B04031   Thykkattussery   B04031013   Naduvathnagar   ABDUL SHUKKOOR                  M   ML       2322
+ALAPPUZHA   B04031   Thykkattussery   B04031013   Naduvathnagar   V.A. RAJAN                      M   CPI(M)   2052
