@@ -89,9 +89,16 @@ def tile_affine(x: int, y: int, z: int) -> tuple[float, float, float, float, flo
     Returned as ``(a, b, d, e, xoff, yoff)`` for ``shapely.affinity.affine_transform``,
     which applies ``x' = a*x + b*y + xoff`` and ``y' = d*x + e*y + yoff``.
 
-    The y scale is negative because MVT y grows upward from the tile's top-left
-    origin while 3857 y grows northward -- get this wrong and every polygon comes
-    out mirrored about its own tile, which still looks like plausible geometry.
+    **The y scale is positive, and that is a statement about the decoder, not about
+    the MVT spec.** The spec puts the tile origin at the top-left with y increasing
+    downward, which would want a negative scale. But ``mapbox_vector_tile.decode``
+    defaults to ``y_coord_down=False`` and applies ``y = extent - y`` on the way out,
+    so what actually reaches this function is bottom-left origin with y increasing
+    upward -- the same direction as EPSG:3857. Matching the spec instead of the
+    decoder mirrors every fragment about its own tile's horizontal axis. That failure
+    is nasty precisely because it looks fine: at state scale it reads as noise, and it
+    only resolves into visibly shredded, banded polygons when you zoom to a single
+    local body.
 
     Scaling is exact: ``EXTENT`` is a power of two, so dividing the tile span by it
     and multiplying back loses nothing. The tile *origin* is still an addition, which
@@ -101,7 +108,7 @@ def tile_affine(x: int, y: int, z: int) -> tuple[float, float, float, float, flo
     minx, miny, maxx, maxy = tile_bounds_3857(x, y, z)
     sx = (maxx - minx) / EXTENT
     sy = (maxy - miny) / EXTENT
-    return sx, 0.0, 0.0, -sy, minx, maxy
+    return sx, 0.0, 0.0, sy, minx, miny
 
 
 def mercator_to_wgs84(mx: float, my: float) -> tuple[float, float]:

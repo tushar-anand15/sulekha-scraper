@@ -88,17 +88,71 @@ def test_children_tile_the_parent_exactly() -> None:
 
 
 def test_affine_maps_tile_corners_onto_tile_bounds() -> None:
-    """Local (0,0) is the tile's top-left; (EXTENT,EXTENT) its bottom-right.
+    """Local (0,0) is the tile's BOTTOM-left; (EXTENT,EXTENT) its top-right.
 
-    MVT y grows upward, the tile grid's y grows downward. If the sign is wrong this
-    still produces well-formed polygons, just mirrored -- so it is asserted directly.
+    This tracks the decoder, not the MVT spec. The spec is y-down from the top-left,
+    but ``mapbox_vector_tile.decode`` defaults to ``y_coord_down=False`` and applies
+    ``y = extent - y``, so decoded coordinates are y-up. Matching the spec here
+    mirrors every fragment about its own tile -- geometry that stays well-formed and
+    correctly placed at state scale, and only reveals itself as shredded banding when
+    you zoom to one local body.
     """
     a, b, d, e, xoff, yoff = tile_affine(728, 483, 10)
     minx, miny, maxx, maxy = tile_bounds_3857(728, 483, 10)
-    top_left = (a * 0 + b * 0 + xoff, d * 0 + e * 0 + yoff)
-    bottom_right = (a * EXTENT + b * EXTENT + xoff, d * EXTENT + e * EXTENT + yoff)
-    assert top_left == pytest.approx((minx, maxy))
-    assert bottom_right == pytest.approx((maxx, miny))
+    bottom_left = (a * 0 + b * 0 + xoff, d * 0 + e * 0 + yoff)
+    top_right = (a * EXTENT + b * EXTENT + xoff, d * EXTENT + e * EXTENT + yoff)
+    assert bottom_left == pytest.approx((minx, miny))
+    assert top_right == pytest.approx((maxx, maxy))
+
+
+def test_affine_sign_joins_a_real_ward_across_adjacent_tiles() -> None:
+    """The decisive check, against real tiles rather than a remembered convention.
+
+    A synthetic round trip cannot settle this: ``mvt.encode`` flips y on the way in
+    and ``mvt.decode`` flips it back, so encode-then-decode is the identity and says
+    nothing about what the *server* wrote. Only real data answers it.
+
+    A ward straddling two vertically-adjacent tiles must union into one polygon. With
+    the sign inverted its two halves land mirrored inside their own tiles and the
+    union comes back as two disjoint pieces -- which is exactly the banding that
+    shipped before this was caught.
+    """
+    from shapely.affinity import affine_transform
+    from shapely.geometry import shape
+    from shapely.ops import unary_union
+
+    from geo.build.stitch import decode_tile, iter_cached_tiles
+    from geo.config import resolve_paths
+
+    paths = resolve_paths()
+    if not paths.tiles.exists():
+        pytest.skip("tile cache not populated")
+
+    fragments: dict[int, list[tuple[int, int, object]]] = {}
+    for z, x, y, path in iter_cached_tiles(paths, "wb_kerala"):
+        if z != 14:
+            continue
+        layer = decode_tile(path).get("wb_kerala")
+        if not layer:
+            continue
+        for feat in layer["features"]:
+            oid = feat["properties"].get("OBJECTID")
+            fragments.setdefault(oid, []).append((x, y, shape(feat["geometry"])))
+
+    straddling = [
+        parts
+        for parts in fragments.values()
+        if len({p[1] for p in parts}) > 1 and len({p[0] for p in parts}) == 1
+    ]
+    if not straddling:
+        pytest.skip("no ward straddles two vertically-adjacent tiles in this cache")
+
+    parts = straddling[0]
+    placed = [affine_transform(g, tile_affine(x, y, 14)) for x, y, g in parts]
+    merged = unary_union(placed)
+    assert merged.geom_type == "Polygon", (
+        "fragments did not join: the affine's y sign disagrees with the decoder"
+    )
 
 
 def test_shared_edge_agrees_far_below_the_quantisation_floor() -> None:
