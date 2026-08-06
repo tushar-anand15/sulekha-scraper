@@ -27,6 +27,7 @@ import csv
 import itertools
 import json
 import logging
+import statistics
 from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
 from typing import Any, Final
@@ -172,6 +173,17 @@ def _bounds(geometries: Iterable[BaseGeometry]) -> tuple[float, float, float, fl
 def _load(path: Path, tiers: frozenset[str] = BASE_TIERS) -> list[dict[str, Any]]:
     data = json.loads(path.read_text(encoding="utf-8"))
     return [f for f in data["features"] if f["properties"].get("lb_type") in tiers]
+
+
+def _ward_rows(paths: Paths, year: str) -> list[dict[str, str]]:
+    """Ward result rows for one cycle, three tiers only.
+
+    Read from the CSV rather than the emitted GeoJSON so a cycle without ward
+    geometry -- 2015 and 2020 -- can still be aggregated to its local bodies.
+    """
+    path = paths.elections / year / f"wards_{year}.csv"
+    with path.open(newline="", encoding="utf-8-sig") as fh:
+        return [row for row in csv.DictReader(fh) if row.get("lb_type") in BASE_TIERS]
 
 
 def _winners(paths: Paths, year: str) -> list[dict[str, str]]:
@@ -371,6 +383,166 @@ def _sequential_legend(ax, ramp: Sequence[str], labels: Sequence[str], title: st
               labelcolor=INK, title=title, title_fontsize=12)
 
 
+def _lb_panel_figure(
+    paths: Paths,
+    *,
+    years: Sequence[str],
+    value_of,
+    ramp: Sequence[str],
+    zero_class: bool,
+    title: str,
+    subtitle: str,
+    legend_title: str,
+    label: str,
+    panel_summary,
+    footnote: str,
+    filename: str,
+) -> Path:
+    """One classed local-body choropleth per cycle, sharing a single set of bins.
+
+    Bins are computed across **all** cycles at once, not per panel. Per-panel
+    quantiles would give each year its own scale, so identical colours would mean
+    different values in different panels and the series would silently stop being
+    comparable -- which is the entire point of drawing them side by side.
+
+    This exists because ward-level attributes can still be mapped for 2015 and 2020
+    by aggregating them to the local body: ward geometry is 2025-only, local-body
+    geometry is not.
+    """
+    geometry = {
+        year: {
+            f["properties"]["lb_code"]: shape(f["geometry"])
+            for f in _load(paths.final / f"local_bodies_{year}.geojson")
+        }
+        for year in years
+    }
+    values = {year: value_of(paths, year) for year in years}
+    codes = sorted(set.intersection(*(set(g) for g in geometry.values())))
+
+    observed = [
+        v for by_code in values.values() for c, v in by_code.items() if c in codes and v is not None
+    ]
+    if zero_class:
+        cuts = _quantile_bins([v for v in observed if v > 0], len(ramp) - 1)
+    else:
+        cuts = _quantile_bins(observed, len(ramp))
+    if not cuts:
+        raise ValueError(f"{filename}: nothing to class")
+
+    def colour_of(value: float | None) -> str:
+        if value is None:
+            return NO_RESERVATION
+        if zero_class:
+            return ramp[0] if value == 0 else ramp[1 + _bin_index(value, cuts)]
+        return ramp[_bin_index(value, cuts)]
+
+    fig, axes = plt.subplots(1, len(years), figsize=(4.5 * len(years), 9.6), facecolor=SURFACE)
+    fig.subplots_adjust(left=0.015, right=0.985, top=0.815, bottom=0.115, wspace=0.01)
+    bounds = _bounds(geometry[years[-1]][c] for c in codes)
+    for ax, year in zip(axes, years):
+        _draw(
+            ax,
+            [geometry[year][c] for c in codes],
+            [colour_of(values[year].get(c)) for c in codes],
+            linewidth=0.12,
+        )
+        _frame(ax, bounds)
+        present = [values[year][c] for c in codes if values[year].get(c) is not None]
+        ax.set_title(f"{year}\n{panel_summary(present)}", color=INK, fontsize=15,
+                     pad=12, linespacing=1.7)
+
+    spans = [f"{label % cuts[i]}–{label % cuts[i + 1]}" for i in range(len(cuts) - 1)]
+    if zero_class:
+        labels = ["none", f"up to {label % cuts[0]}", *spans, f"over {label % cuts[-1]}"]
+    else:
+        labels = [f"under {label % cuts[0]}", *spans, f"over {label % cuts[-1]}"]
+    _sequential_legend(axes[-1], ramp, labels, legend_title)
+    fig.suptitle(title, color=INK, fontsize=22, y=0.982)
+    fig.text(0.5, 0.943, subtitle, ha="center", va="top", color=MUTED, fontsize=12.5)
+    fig.text(0.5, 0.018, footnote, ha="center", color=MUTED, fontsize=9.5, linespacing=1.6)
+    out = paths.maps / filename
+    out.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out, dpi=170, facecolor=SURFACE)
+    plt.close(fig)
+    return out
+
+
+def _reservation_share(paths: Paths, year: str) -> dict[str, float]:
+    """Percentage of a local body's wards reserved for SC or ST.
+
+    Returned as 0-100, not 0-1. Every value function feeding
+    :func:`_lb_panel_figure` uses percentage points, because the legend formats
+    them with one shared format string -- a function returning a fraction renders
+    a legend reading "up to 0%" and "0%-0%", which is what this one did.
+    """
+    counts: dict[str, list[int]] = collections.defaultdict(lambda: [0, 0])
+    for row in _ward_rows(paths, year):
+        tally = counts[row["lb_code"]]
+        tally[1] += 1
+        if (row.get("reservation") or "").upper().startswith(("SC", "ST")):
+            tally[0] += 1
+    return {c: 100 * hit / total for c, (hit, total) in counts.items() if total}
+
+
+def _median_margin_pct(paths: Paths, year: str) -> dict[str, float]:
+    """Median winning margin in a local body, as a share of that ward's valid votes."""
+    by_body: dict[str, list[float]] = collections.defaultdict(list)
+    for row in _ward_rows(paths, year):
+        try:
+            winner = int(row["winner_votes"])
+            runner = int(row["runnerup_votes"])
+            valid = int(row["valid_votes"])
+        except (TypeError, ValueError):
+            continue
+        if valid > 0:
+            by_body[row["lb_code"]].append(100 * (winner - runner) / valid)
+    return {c: statistics.median(v) for c, v in by_body.items() if v}
+
+
+def reservation_share_figure(paths: Paths, years: Sequence[str] = ("2015", "2020", "2025")) -> Path:
+    """SC/ST reserved share per local body, for every cycle.
+
+    The ward-level reservation map can only be drawn for 2025, because that is the
+    only cycle with ward geometry. Aggregating to the local body recovers the other
+    two: the question "how much of this council is reserved" is answerable from the
+    ward table alone, and local-body geometry exists for all three.
+    """
+    return _lb_panel_figure(
+        paths, years=years, value_of=_reservation_share, ramp=SEQUENTIAL_VIOLET,
+        zero_class=True,
+        title="Share of each council reserved for SC and ST",
+        subtitle="Wards reserved for Scheduled Castes or Tribes, as a share of the body's seats",
+        legend_title="Reserved share", label="%.0f%%",
+        panel_summary=lambda v: f"{sum(v) / len(v):.1f}% of seats on average",
+        footnote=(
+            "Reservation is a ward attribute, so the ward-level map exists only for 2025 — the one cycle "
+            "with ward geometry.\nAggregated to the local body it can be shown for all three. "
+            "The palest class is zero: bodies with no SC or ST reserved seat at all.\n"
+            "Results: Kerala State Election Commission."
+        ),
+        filename="kerala_reservation_share.png",
+    )
+
+
+def margin_share_figure(paths: Paths, years: Sequence[str] = ("2015", "2020", "2025")) -> Path:
+    """Median winning margin per local body, as a percentage of valid votes."""
+    return _lb_panel_figure(
+        paths, years=years, value_of=_median_margin_pct, ramp=SEQUENTIAL_CYAN,
+        zero_class=False,
+        title="How close the contests were, cycle by cycle",
+        subtitle="Median winning margin in each local body, as a share of the ward's valid votes",
+        legend_title="Median margin", label="%.0f%%",
+        panel_summary=lambda v: f"{statistics.median(v):.1f}% median across bodies",
+        footnote=(
+            "Expressed as a share of valid votes, not raw votes: wards range from a few hundred electors "
+            "to over ten thousand,\nso the same vote gap means very different things. Classed at equal "
+            "quantiles across all three cycles at once, so a colour\nmeans the same value in every panel. "
+            "Results: Kerala State Election Commission."
+        ),
+        filename="kerala_margin_share.png",
+    )
+
+
 def women_in_open_seats_figure(
     paths: Paths, years: Sequence[str] = ("2015", "2020", "2025")
 ) -> Path:
@@ -534,7 +706,18 @@ def margin_figure(paths: Paths, year: str = "2025") -> Path:
     """
     features = _load(paths.final / f"wards_{year}.geojson")
     geoms = [shape(f["geometry"]) for f in features]
-    margins = [f["properties"].get("margin") for f in features]
+
+    def share(props: Mapping[str, Any]) -> float | None:
+        # As a share of valid votes, not a raw count. Wards run from a few hundred
+        # electors to over ten thousand, so the same vote gap is a landslide in one
+        # and a near-tie in another -- an absolute-margin map is largely a map of
+        # ward size.
+        margin, valid = props.get("margin"), props.get("valid_votes")
+        if margin is None or not valid:
+            return None
+        return 100 * margin / valid
+
+    margins = [share(f["properties"]) for f in features]
     observed = [m for m in margins if m is not None]
     cuts = _quantile_bins(observed, len(SEQUENTIAL_CYAN))
     if not cuts:
@@ -548,22 +731,24 @@ def margin_figure(paths: Paths, year: str = "2025") -> Path:
         linewidth=0.04,
     )
     _frame(ax, _bounds(geoms))
-    labels = [f"under {cuts[0]:,.0f}"] + [
-        f"{cuts[i]:,.0f}–{cuts[i + 1]:,.0f}" for i in range(len(cuts) - 1)
-    ] + [f"over {cuts[-1]:,.0f}"]
-    _sequential_legend(ax, SEQUENTIAL_CYAN, labels, "Winning margin (votes)")
+    labels = [f"under {cuts[0]:.0f}%"] + [
+        f"{cuts[i]:.0f}–{cuts[i + 1]:.0f}%" for i in range(len(cuts) - 1)
+    ] + [f"over {cuts[-1]:.0f}%"]
+    _sequential_legend(ax, SEQUENTIAL_CYAN, labels, "Winning margin")
     fig.suptitle(f"How close each ward was — {year}", color=INK, fontsize=22, y=0.975)
     fig.text(
         0.5, 0.937,
-        f"Winner's lead over the runner-up, across {len(observed):,} contested wards",
+        f"Winner's lead over the runner-up as a share of valid votes, "
+        f"across {len(observed):,} contested wards",
         ha="center", va="top", color=MUTED, fontsize=12.5,
     )
     fig.text(
         0.5, 0.045,
-        "Classed at equal quantiles, not equal width: margins are heavily\n"
-        "skewed and equal-width bins would put almost every ward in one class.\n"
-        f"{len(margins) - len(observed):,} uncontested wards are drawn neutral —\n"
-        "no opponent stood, so there is no margin to report.",
+        "A share, not a raw count: wards run from a few hundred electors to over\n"
+        "ten thousand, so the same vote gap is a landslide in one and a near-tie in\n"
+        "another. Classed at equal quantiles — margins are skewed enough that\n"
+        f"equal-width bins would put almost every ward in one class. "
+        f"{len(margins) - len(observed):,} wards\nare drawn neutral: uncontested, or missing a vote total.",
         ha="center", color=MUTED, fontsize=9.5, linespacing=1.6,
     )
     out = paths.maps / f"kerala_margin_{year}.png"
@@ -583,8 +768,10 @@ def render_all(paths: Paths) -> list[Path]:
         ("ruling front", lambda: ruling_front_figure(paths)),
         ("ward winners", lambda: ward_winner_figure(paths)),
         ("women in unreserved seats", lambda: women_in_open_seats_figure(paths)),
-        ("community reservation", lambda: community_reservation_figure(paths)),
-        ("winning margin", lambda: margin_figure(paths)),
+        ("community reservation (2025 wards)", lambda: community_reservation_figure(paths)),
+        ("reserved share per body", lambda: reservation_share_figure(paths)),
+        ("winning margin (2025 wards)", lambda: margin_figure(paths)),
+        ("median margin per body", lambda: margin_share_figure(paths)),
         (
             "ward shape check",
             lambda: local_body_zoom_figure(

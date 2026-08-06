@@ -282,3 +282,22 @@ def test_community_reservation_reads_the_woman_variants_too():
     assert set(RESERVATION_COLOURS) == {"SC", "ST"}
     for text, expected in [("SC", "SC"), ("SC Woman", "SC"), ("ST", "ST"), ("ST Woman", "ST")]:
         assert re.match(r"^(SC|ST)", text).group(1) == expected
+
+
+def test_panel_value_functions_all_return_percentage_points():
+    """One shared legend format string means one shared unit.
+
+    A value function returning a 0-1 fraction renders a legend reading "up to 0%"
+    and "0%-0%" -- which is exactly what the SC/ST share did before this.
+    """
+    paths = resolve_paths()
+    if not (paths.elections / "2025" / "wards_2025.csv").exists():
+        pytest.skip("election CSVs not present")
+    from geo.build.maps import _median_margin_pct, _reservation_share
+
+    for fn in (_reservation_share, _median_margin_pct):
+        values = list(fn(paths, "2025").values())
+        assert values, fn.__name__
+        # A percentage of seats or votes: never a 0-1 fraction, never over 100.
+        assert max(values) > 1.5, f"{fn.__name__} looks like a fraction, not a percentage"
+        assert max(values) <= 100.0, fn.__name__
