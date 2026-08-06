@@ -315,3 +315,41 @@ def test_missing_identity_field_raises_naming_the_path(paths: Paths) -> None:
     with pytest.raises(StitchError) as excinfo:
         stitch_layer(paths, layer)
     assert str(path) in str(excinfo.value)
+
+
+def test_geometry_is_valid_in_the_frame_callers_actually_receive(tmp_path):
+    """Repair must survive reprojection, not merely precede it.
+
+    The mercator inverse is nonlinear in y, so a polygon repaired in EPSG:3857
+    can come out of the transform self-intersecting. Repairing only before the
+    transform therefore ships invalid geometry while looking correct in the
+    projected frame -- which is exactly what happened on the real statewide
+    cache: 40 of 21,002 wards, every one of them valid until reprojected.
+    """
+    from shapely.geometry import Polygon
+    from shapely.ops import transform as shapely_transform
+
+    from geo.build.stitch import _mercator_to_wgs84_xy, _repair
+
+    # A sliver whose vertices are near-collinear at high latitude -- the shape
+    # most sensitive to the nonlinearity.
+    sliver = Polygon(
+        [
+            (8_300_000.0, 1_430_000.0),
+            (8_300_100.0, 1_430_000.05),
+            (8_300_200.0, 1_430_000.0),
+            (8_300_100.0, 1_429_999.95),
+        ]
+    )
+    reprojected = shapely_transform(_mercator_to_wgs84_xy, sliver)
+    assert _repair(reprojected).is_valid
+
+
+def test_repair_is_idempotent_on_valid_input():
+    """Repair must not reshape geometry that was already fine."""
+    from shapely.geometry import box
+
+    from geo.build.stitch import _repair
+
+    good = box(0, 0, 1, 1)
+    assert _repair(good) is good

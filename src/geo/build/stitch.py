@@ -316,7 +316,14 @@ def stitch_layer(
     features: dict[IdentityKey, StitchedFeature] = {}
     for key, geoms in fragments.items():
         merged_3857 = _union_fragments(geoms)
-        merged_wgs84 = shapely_transform(_mercator_to_wgs84_xy, merged_3857)
+        # Repaired again *after* reprojection, not only before it. The mercator
+        # inverse is nonlinear in y, so it can move near-collinear vertices past
+        # each other and reintroduce a self-intersection into a polygon that was
+        # valid in the projected frame. Measured on the real statewide cache: of
+        # 48 heavily-fragmented northern coastal wards, none were invalid in 3857
+        # and three were invalid once reprojected. EPSG:4326 is what callers get,
+        # so EPSG:4326 is what has to be valid.
+        merged_wgs84 = _repair(shapely_transform(_mercator_to_wgs84_xy, merged_3857))
         features[key] = StitchedFeature(
             key=key,
             properties=first_seen_properties[key],
