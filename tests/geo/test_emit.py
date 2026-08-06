@@ -464,3 +464,60 @@ def test_every_emitted_layer_still_parses_as_valid_geojson(tmp_path: Path):
 
     assert full_size > 0
     assert simplified_size > 0
+
+
+# --- coordinate precision ----------------------------------------------------
+
+
+def test_coordinates_are_rounded_to_the_configured_precision():
+    """Full float64 repr is ~17 digits per ordinate against a 60 cm data quantum.
+
+    On the ward layer that padding was most of a 354 MB file -- precision bloat,
+    not detail.
+    """
+    from shapely.geometry import Polygon
+
+    from geo.build.attributes import JoinResult, JoinedFeature
+    from geo.build.emit import to_feature_collection
+
+    poly = Polygon([(76.123456789012, 10.987654321098), (76.2, 10.9), (76.1, 11.0)])
+    result = JoinResult(layer="wb_kerala", features=[JoinedFeature(geometry=poly, properties={})], unmatched=[])
+    coll = to_feature_collection(result, {}, precision=6)
+    x, y = coll["features"][0]["geometry"]["coordinates"][0][0]
+    assert x == 76.123457
+    assert y == 10.987654
+
+
+def test_precision_none_keeps_full_float_output():
+    from shapely.geometry import Polygon
+
+    from geo.build.attributes import JoinResult, JoinedFeature
+    from geo.build.emit import to_feature_collection
+
+    poly = Polygon([(76.123456789012, 10.987654321098), (76.2, 10.9), (76.1, 11.0)])
+    result = JoinResult(layer="wb_kerala", features=[JoinedFeature(geometry=poly, properties={})], unmatched=[])
+    coll = to_feature_collection(result, {}, precision=None)
+    assert coll["features"][0]["geometry"]["coordinates"][0][0][0] == 76.123456789012
+
+
+def test_rounding_preserves_geometry_structure():
+    """Rings, holes and multipart structure must survive untouched -- only the
+    numbers change, never the nesting."""
+    from shapely.geometry import MultiPolygon, Polygon
+
+    from geo.build.emit import round_coordinates
+    from shapely.geometry import mapping
+
+    outer = [(0, 0), (0, 4), (4, 4), (4, 0)]
+    hole = [(1, 1), (1, 2), (2, 2), (2, 1)]
+    geom = MultiPolygon([Polygon(outer, [hole]), Polygon([(9, 9), (9, 10), (10, 10)])])
+    before = mapping(geom)
+    after = round_coordinates(before, 6)
+
+    def shape_of(node):
+        if isinstance(node, (list, tuple)):
+            return [shape_of(n) for n in node]
+        return None
+
+    assert shape_of(before["coordinates"]) == shape_of(after["coordinates"])
+    assert after["type"] == "MultiPolygon"

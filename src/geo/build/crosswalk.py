@@ -103,7 +103,18 @@ class Match:
         A pairing below the sample floor is *unverified*, not *wrong* -- it is
         carried with the flag set so the crosswalk CSV shows a reviewer exactly
         which rows rest on thin evidence.
+
+        The same applies, and matters more, when the *other* side carries no ward
+        names at all. The opendatakerala source is exactly that case: it is a
+        local-body polygon set with no ward data anywhere in it. Scoring those
+        pairings against an empty list yields 0.0 agreement for every one of
+        them, and rejecting on that would throw away all 1,200 bodies on the
+        grounds that a comparison nobody could make did not succeed. Absence of
+        evidence is not contradiction; only a side that *has* ward names can
+        disagree about them.
         """
+        if not self.theirs.ward_names:
+            return True
         if len(self.ours.ward_names) < MIN_SAMPLE_FOR_GATE:
             return True
         return self.ward_agreement >= MIN_WARD_AGREEMENT

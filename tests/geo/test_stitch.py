@@ -353,3 +353,34 @@ def test_repair_is_idempotent_on_valid_input():
 
     good = box(0, 0, 1, 1)
     assert _repair(good) is good
+
+
+def test_repair_returns_areal_geometry_only():
+    """make_valid salvages everything, including dangling edges.
+
+    A polygon pinched at a point repairs to polygons *plus* a LineString, handed
+    back as a GeometryCollection. A ward is an area: emitting a mixed collection
+    breaks consumers and the simplification pass outright. 40 of 21,002 wards hit
+    this on the real statewide build.
+    """
+    from shapely.geometry import Polygon
+
+    from geo.build.stitch import _repair
+
+    bowtie = Polygon([(0, 0), (2, 2), (2, 0), (0, 2)])
+    assert not bowtie.is_valid
+    repaired = _repair(bowtie)
+    assert repaired.geom_type in ("Polygon", "MultiPolygon")
+    assert repaired.is_valid
+
+
+def test_repair_keeps_all_the_area_it_salvages():
+    """Dropping the non-areal parts must not drop actual extent."""
+    from shapely.geometry import Polygon
+
+    from geo.build.stitch import _repair
+
+    bowtie = Polygon([(0, 0), (2, 2), (2, 0), (0, 2)])
+    repaired = _repair(bowtie)
+    # The bowtie's two lobes are 1.0 each.
+    assert repaired.area == pytest.approx(2.0)

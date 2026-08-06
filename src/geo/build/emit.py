@@ -98,18 +98,59 @@ def ksmart_provenance(*, layer: str, fetched: str, built: str) -> dict[str, Any]
     }
 
 
+#: Decimal places kept on emitted coordinates.
+#:
+#: Six places is about 11 cm at Kerala's latitude, against a z14 tile quantisation
+#: floor of ~60 cm -- so this discards digits the source never actually resolved.
+#: They are not free: shapely emits full float64 repr, seventeen significant digits
+#: per ordinate, and on the ward layer that padding is most of a 354 MB file. It is
+#: precision bloat rather than detail, and it dominates vertex count as a cost.
+COORDINATE_PRECISION: Final = 6
+
+
+def round_coordinates(obj: Any, precision: int) -> Any:
+    """Round every ordinate in a GeoJSON geometry mapping, structure preserved.
+
+    Walks the nested coordinate lists rather than using ``shapely.set_precision``,
+    which snaps geometry onto a grid and can merge or drop vertices -- a topology
+    change. Rounding the emitted numbers only affects the text written out; the
+    geometry objects the gates ran against are untouched.
+    """
+    if isinstance(obj, float):
+        return round(obj, precision)
+    if isinstance(obj, int):
+        return obj
+    if isinstance(obj, (list, tuple)):
+        return [round_coordinates(item, precision) for item in obj]
+    if isinstance(obj, Mapping):
+        return {k: round_coordinates(v, precision) for k, v in obj.items()}
+    return obj
+
+
 def to_feature_collection(
-    result: JoinResult, provenance: Mapping[str, Any]
+    result: JoinResult,
+    provenance: Mapping[str, Any],
+    *,
+    precision: int | None = COORDINATE_PRECISION,
 ) -> dict[str, Any]:
     """Build the FeatureCollection dict -- kept separate from the file write so tests
-    can inspect the structure without a round trip through disk."""
+    can inspect the structure without a round trip through disk.
+
+    ``precision=None`` writes coordinates unrounded, for a caller that genuinely
+    wants the raw float64 output.
+    """
+
+    def geometry_of(feature: Any) -> Any:
+        geom = mapping(feature.geometry)
+        return geom if precision is None else round_coordinates(geom, precision)
+
     return {
         "type": "FeatureCollection",
         "provenance": dict(provenance),
         "features": [
             {
                 "type": "Feature",
-                "geometry": mapping(f.geometry),
+                "geometry": geometry_of(f),
                 "properties": f.properties,
             }
             for f in result.features
@@ -118,7 +159,11 @@ def to_feature_collection(
 
 
 def write_feature_collection(
-    path: Path, result: JoinResult, provenance: Mapping[str, Any]
+    path: Path,
+    result: JoinResult,
+    provenance: Mapping[str, Any],
+    *,
+    precision: int | None = COORDINATE_PRECISION,
 ) -> dict[str, Any]:
     """Write one layer's FeatureCollection to ``path``, returning what was written.
 
@@ -128,8 +173,11 @@ def write_feature_collection(
     than in the CLI's own gate-then-write shape.
     """
     path.parent.mkdir(parents=True, exist_ok=True)
-    collection = to_feature_collection(result, provenance)
-    path.write_text(json.dumps(collection, ensure_ascii=False, indent=None), encoding="utf-8")
+    collection = to_feature_collection(result, provenance, precision=precision)
+    path.write_text(
+        json.dumps(collection, ensure_ascii=False, indent=None, separators=(",", ":")),
+        encoding="utf-8",
+    )
     return collection
 
 

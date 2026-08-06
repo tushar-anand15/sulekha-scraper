@@ -269,3 +269,29 @@ def test_crosswalk_surfaces_an_unknown_district():
             [ours("G02003", "Clappana", district="KOLLAM", wards=WARDS_A)],
             [theirs("G020103", "Clappana", district="Atlantis", wards=WARDS_A)],
         )
+
+
+def test_a_side_with_no_ward_names_cannot_contradict():
+    """Absence of evidence is not contradiction.
+
+    The opendatakerala source is a local-body polygon set carrying no ward data
+    at all. Scoring against an empty list gives 0.0 agreement for every pairing,
+    and treating that as disagreement rejected all 1,200 bodies -- failing them
+    for a comparison nobody could have made.
+    """
+    r = build_crosswalk(
+        [ours("G02003", "Clappana", wards=WARDS_A)],
+        [theirs("G02003", "Clappana", wards=())],
+    )
+    assert r.resolved_count == 1
+    assert not r.rejected
+
+
+def test_a_side_with_ward_names_still_can_contradict():
+    """The relaxation above must not disarm the gate where evidence does exist."""
+    r = build_crosswalk(
+        [ours("G02003", "Clappana", wards=WARDS_A)],
+        [theirs("G020103", "Clappana", wards=WARDS_B)],
+    )
+    assert r.resolved_count == 0
+    assert len(r.rejected) == 1
