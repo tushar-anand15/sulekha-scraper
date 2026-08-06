@@ -270,8 +270,15 @@ OSM_ACCURACY_CAVEAT: Final = (
 
 #: One filename per earlier cycle. ``lb_kerala`` from Unit 6 stays the 2025
 #: name; these three are new.
+#: The cycles this package maps, and deliberately only these.
+#:
+#: 2010 is absent on purpose. Its geometry belongs to the Delimitation Commission
+#: PDF track (see ``docs/georeferencing_note.md``), which is out of scope, and the
+#: OSM polygons are a November 2020 snapshot -- fifteen years and three
+#: delimitations away from that cycle, across which Kerala went from 59
+#: municipalities to 87. Emitting a 2010 layer from them was cheap to do and
+#: would have quietly asserted a boundary set that never existed in 2010.
 EARLIER_CYCLE_FILENAMES: Final[dict[str, str]] = {
-    "2010": "local_bodies_2010.geojson",
     "2015": "local_bodies_2015.geojson",
     "2020": "local_bodies_2020.geojson",
 }
@@ -375,10 +382,9 @@ def emit_earlier_cycle_local_body_layer(
 ) -> Path:
     """Write the 2010, 2015 or 2020 local-body layer.
 
-    ``year`` selects the output filename from :data:`EARLIER_CYCLE_FILENAMES`
-    -- R7 makes 2010 a writer argument rather than new code, since the
-    geometry, crosswalk and join machinery are identical across all three
-    cycles and only the joined CSV (``local_bodies_<year>.csv``) differs.
+    ``year`` selects the output filename from :data:`EARLIER_CYCLE_FILENAMES`.
+    The geometry, crosswalk and join machinery are identical across cycles;
+    only the joined CSV (``local_bodies_<year>.csv``) differs.
     """
     if year not in EARLIER_CYCLE_FILENAMES:
         expected = sorted(EARLIER_CYCLE_FILENAMES)

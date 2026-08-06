@@ -202,7 +202,7 @@ def test_osm_and_ksmart_provenance_are_never_cross_labelled():
     """The KSMART layers have no stated open licence at all (see
     ``KSMART_LICENCE``); an OSM layer's ODbL notice must never leak onto one,
     and vice versa."""
-    osm = osm_provenance(year="2010", fetched="x", built="y")
+    osm = osm_provenance(year="2015", fetched="x", built="y")
     ksmart = ksmart_provenance(layer="lb_kerala", fetched="x", built="y")
     assert "ODbL" not in ksmart["licence"]
     assert "ODbL" in osm["licence"]
@@ -275,7 +275,7 @@ def _osm_lb_result():
     )
 
 
-@pytest.mark.parametrize("year", ["2010", "2015", "2020"])
+@pytest.mark.parametrize("year", ["2015", "2020"])
 def test_emit_earlier_cycle_local_body_layer_writes_the_right_filename(tmp_path: Path, year: str):
     paths = resolve_paths(tmp_path)
     out_path = emit_earlier_cycle_local_body_layer(
@@ -521,3 +521,15 @@ def test_rounding_preserves_geometry_structure():
 
     assert shape_of(before["coordinates"]) == shape_of(after["coordinates"])
     assert after["type"] == "MultiPolygon"
+
+
+def test_2010_is_not_an_emittable_cycle():
+    """2010's geometry belongs to the Delimitation Commission PDF track, which is
+    out of scope. The OSM polygons are a Nov-2020 snapshot -- three delimitations
+    later, across which Kerala went from 59 municipalities to 87 -- so emitting a
+    2010 layer from them would assert a boundary set that never existed.
+    """
+    from geo.build.emit import EARLIER_CYCLE_FILENAMES
+
+    assert "2010" not in EARLIER_CYCLE_FILENAMES
+    assert set(EARLIER_CYCLE_FILENAMES) == {"2015", "2020"}
