@@ -308,3 +308,69 @@ def test_fetch_all_layers_covers_all_six(tmp_path: Path, monkeypatch: pytest.Mon
     assert len(ksmart.LAYERS) == 6
     for stats in results.values():
         assert stats.empty == 1
+
+
+# -- per-layer scrape depth ---------------------------------------------------------
+
+
+def test_max_zoom_stops_the_descent_early(tmp_path: Path) -> None:
+    """A shallower layer must stop where told, not at the module default.
+
+    This is what makes the BP/DP layers affordable: each extra level is 4x the
+    requests, so descending two levels further than a layer needs would quadruple
+    the load twice over for boundaries nobody can distinguish.
+    """
+    z8, x8, y8 = _single_root_bounds()
+    paths = resolve_paths(tmp_path)
+    client = _client()
+
+    with responses.RequestsMock() as rsps:
+        rsps.add(responses.GET, _url("kerala_bp", z8, x8, y8), status=200, body=_mvt_bytes())
+        for cz, cx, cy in tile_children(x8, y8, z8):
+            rsps.add(responses.GET, _url("kerala_bp", cz, cx, cy), status=200, body=_mvt_bytes())
+        stats = fetch_layer(
+            client, paths, "kerala_bp", bounds=(*TVM, *TVM), max_zoom=z8 + 1, max_workers=1
+        )
+        # Exactly the root and its four children -- nothing at z10.
+        assert len(rsps.calls) == 5
+
+    assert stats.tiles == 5
+    for cz, cx, cy in tile_children(x8, y8, z8):
+        for gz, gx, gy in tile_children(cx, cy, cz):
+            assert not paths.tile("kerala_bp", gz, gx, gy).exists()
+
+
+def test_max_zoom_default_still_follows_the_module_constant(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Passing nothing must track MAX_ZOOM at call time, not at import time.
+
+    A default argument would have frozen the value when the function was defined,
+    which is a bug that only shows up as tests mysteriously ignoring a monkeypatch.
+    """
+    z8, x8, y8 = _single_root_bounds()
+    monkeypatch.setattr(ksmart, "MAX_ZOOM", z8)
+    paths = resolve_paths(tmp_path)
+    client = _client()
+
+    with responses.RequestsMock() as rsps:
+        rsps.add(responses.GET, _url("kerala_dp", z8, x8, y8), status=200, body=_mvt_bytes())
+        fetch_layer(client, paths, "kerala_dp", bounds=(*TVM, *TVM), max_workers=1)
+        assert len(rsps.calls) == 1
+
+
+@pytest.mark.parametrize("bad", [ksmart.MIN_ZOOM - 1, ksmart.MAX_ZOOM + 1, 0])
+def test_out_of_range_max_zoom_is_rejected(tmp_path: Path, bad: int) -> None:
+    """The server only serves z8..z16; a silent no-op descent would look like
+    an empty state rather than a mistake."""
+    with pytest.raises(ValueError, match="max_zoom"):
+        fetch_layer(_client(), resolve_paths(tmp_path), "kerala_bp", max_zoom=bad)
+
+
+def test_layer_zooms_covers_every_layer_and_stays_in_range() -> None:
+    assert set(ksmart.LAYER_ZOOMS) == set(ksmart.LAYERS)
+    for layer, z in ksmart.LAYER_ZOOMS.items():
+        assert ksmart.MIN_ZOOM <= z <= ksmart.MAX_ZOOM, layer
+    # The layers actually rendered keep full depth; the rest are deliberately shallower.
+    assert ksmart.LAYER_ZOOMS["wb_kerala"] == ksmart.MAX_ZOOM
+    assert ksmart.LAYER_ZOOMS["kerala_bp_with_lsgd"] < ksmart.LAYER_ZOOMS["kerala_bp"]

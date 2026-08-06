@@ -30,7 +30,7 @@ from __future__ import annotations
 import os
 import tempfile
 import threading
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -61,6 +61,23 @@ MIN_ZOOM: Final = 8
 #: The scrape depth chosen in the plan: IoU against z12 converges by z14, and z14 to
 #: z16 buys under 0.1% area change for 7.6x the requests.
 MAX_ZOOM: Final = 14
+
+#: Scrape depth per layer. Absent layers fall back to :data:`MAX_ZOOM`.
+#:
+#: Ward polygons are small and carry the detail the map is actually made of, so they
+#: get the full depth. Block and District Panchayat *divisions* each span several
+#: wards, and a level shallower is a quarter of the requests for a boundary no one
+#: can tell apart at any plausible view. The two tier-membership layers are never
+#: drawn -- they are read for their attributes, to verify which ward sits in which
+#: division -- so they are fetched shallower still.
+LAYER_ZOOMS: Final[dict[str, int]] = {
+    "wb_kerala": 14,
+    "lb_kerala": 14,
+    "kerala_bp": 13,
+    "kerala_dp": 13,
+    "kerala_bp_with_lsgd": 12,
+    "kerala_dp_with_block": 12,
+}
 
 #: A generous bounding box around Kerala, padded well past the coastline so the
 #: descent -- not this box -- is what decides where the state actually is. The z8
@@ -156,14 +173,29 @@ def fetch_layer(
     *,
     bounds: tuple[float, float, float, float] = KERALA_BOUNDS,
     max_workers: int = 4,
+    max_zoom: int | None = None,
 ) -> FetchStats:
-    """Quadtree-descend one layer from :data:`MIN_ZOOM` to :data:`MAX_ZOOM`.
+    """Quadtree-descend one layer from :data:`MIN_ZOOM` to ``max_zoom``.
 
     Processes tiles one zoom level at a time: every tile at the current level is
     requested (or served from cache) before any of the next level's tiles are
     queued, since which children exist at all depends on which tiles in this level
     came back non-empty.
+
+    ``max_zoom`` is per-layer because the layers are not alike. Ward polygons are
+    small and need :data:`MAX_ZOOM`; a Block Panchayat division spans several wards,
+    so a zoom shallower costs a quarter of the requests for detail no one can see.
+    The tier-membership layers are read for their attributes and never drawn at all.
+    Since each level costs 4x the one above it, this is the difference between a
+    ten-minute fetch and an hour of load on someone else's server.
     """
+    # Resolved here rather than as a default argument: Python binds defaults once at
+    # definition time, so `max_zoom=MAX_ZOOM` would freeze the value and silently
+    # ignore anyone -- tests included -- who rebinds the module constant.
+    if max_zoom is None:
+        max_zoom = MAX_ZOOM
+    if not MIN_ZOOM <= max_zoom <= MAX_ZOOM:
+        raise ValueError(f"max_zoom must be within {MIN_ZOOM}..{MAX_ZOOM}, got {max_zoom}")
     stats = FetchStats(layer=layer)
     lat0, lon0, lat1, lon1 = bounds
     xs, ys = tile_range(lat0, lon0, lat1, lon1, MIN_ZOOM)
@@ -180,7 +212,7 @@ def fetch_layer(
             for future in as_completed(futures):
                 z, x, y = futures[future]
                 status = future.result()
-                if status is TileStatus.TILE and z < MAX_ZOOM:
+                if status is TileStatus.TILE and z < max_zoom:
                     frontier.extend(tile_children(x, y, z))
 
     logger.info(
@@ -201,15 +233,25 @@ def fetch_all_layers(
     layers: Sequence[str] = LAYERS,
     bounds: tuple[float, float, float, float] = KERALA_BOUNDS,
     max_workers: int = 4,
+    zooms: Mapping[str, int] | None = None,
 ) -> dict[str, FetchStats]:
     """Descend every layer in turn, returning per-layer stats.
 
     Sequential across layers (each is already a five-figure request count on its
     own); concurrency is bounded within a layer via ``max_workers``.
+
+    ``zooms`` overrides the depth per layer; anything absent from it uses
+    :data:`MAX_ZOOM`. See :data:`LAYER_ZOOMS` for the defaults and why they differ.
     """
+    zooms = dict(zooms or {})
     results: dict[str, FetchStats] = {}
     for layer in layers:
         results[layer] = fetch_layer(
-            client, paths, layer, bounds=bounds, max_workers=max_workers
+            client,
+            paths,
+            layer,
+            bounds=bounds,
+            max_workers=max_workers,
+            max_zoom=zooms.get(layer),
         )
     return results
