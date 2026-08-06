@@ -31,6 +31,7 @@ from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any, Final
 
+from shapely import set_precision
 from shapely.geometry import LineString, mapping
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import linemerge, polygonize, unary_union
@@ -141,8 +142,21 @@ def to_feature_collection(
     """
 
     def geometry_of(feature: Any) -> Any:
-        geom = mapping(feature.geometry)
-        return geom if precision is None else round_coordinates(geom, precision)
+        if precision is None:
+            return mapping(feature.geometry)
+        # Snap onto the output grid *before* serialising, rather than rounding the
+        # numbers afterwards. Rounding each ordinate independently can push a
+        # vertex across an adjacent edge and make a valid polygon self-intersect
+        # -- it did, for 2 wards and 5 local bodies. `set_precision` is
+        # topology-aware: it snaps to the grid and repairs what that collapses,
+        # so what gets written is both grid-aligned and valid. The subsequent
+        # rounding is then a formatting no-op that trims float repr noise.
+        snapped = set_precision(feature.geometry, 10.0**-precision)
+        if snapped.is_empty:
+            # Snapping can annihilate a feature smaller than one grid cell; keep
+            # the original rather than emit an empty geometry.
+            snapped = feature.geometry
+        return round_coordinates(mapping(snapped), precision)
 
     return {
         "type": "FeatureCollection",

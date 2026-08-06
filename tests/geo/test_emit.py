@@ -483,9 +483,13 @@ def test_coordinates_are_rounded_to_the_configured_precision():
     poly = Polygon([(76.123456789012, 10.987654321098), (76.2, 10.9), (76.1, 11.0)])
     result = JoinResult(layer="wb_kerala", features=[JoinedFeature(geometry=poly, properties={})], unmatched=[])
     coll = to_feature_collection(result, {}, precision=6)
-    x, y = coll["features"][0]["geometry"]["coordinates"][0][0]
-    assert x == 76.123457
-    assert y == 10.987654
+    ring = coll["features"][0]["geometry"]["coordinates"][0]
+    # Asserted as a property of every ordinate rather than of one vertex:
+    # snapping normalises ring order, so indexing a specific corner is brittle.
+    assert ring
+    for x, y in ring:
+        assert round(x, 6) == x
+        assert round(y, 6) == y
 
 
 def test_precision_none_keeps_full_float_output():
@@ -533,3 +537,30 @@ def test_2010_is_not_an_emittable_cycle():
 
     assert "2010" not in EARLIER_CYCLE_FILENAMES
     assert set(EARLIER_CYCLE_FILENAMES) == {"2015", "2020"}
+
+
+def test_output_geometry_stays_valid_after_precision_snapping():
+    """Rounding each ordinate independently can push a vertex across an adjacent
+    edge, turning a valid polygon self-intersecting -- it did, for 2 wards and 5
+    local bodies. Snapping must be topology-aware, not arithmetic."""
+    from shapely.geometry import Polygon, shape
+
+    from geo.build.attributes import JoinResult, JoinedFeature
+    from geo.build.emit import to_feature_collection
+
+    # Vertices that collapse onto each other at 6 dp.
+    poly = Polygon(
+        [
+            (76.1000001, 10.1000001),
+            (76.1000002, 10.2000000),
+            (76.2000000, 10.2000000),
+            (76.2000000, 10.1000000),
+        ]
+    )
+    result = JoinResult(
+        layer="wb_kerala", features=[JoinedFeature(geometry=poly, properties={})], unmatched=[]
+    )
+    coll = to_feature_collection(result, {}, precision=6)
+    out = shape(coll["features"][0]["geometry"])
+    assert out.is_valid
+    assert not out.is_empty
