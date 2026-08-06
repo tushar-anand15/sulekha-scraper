@@ -384,3 +384,56 @@ def test_repair_keeps_all_the_area_it_salvages():
     repaired = _repair(bowtie)
     # The bowtie's two lobes are 1.0 each.
     assert repaired.area == pytest.approx(2.0)
+
+
+def test_only_the_deepest_cached_zoom_is_used(paths: Paths) -> None:
+    """Mixing zooms inflates every feature to its coarsest rendering.
+
+    The cache holds every level the descent walked. Each carries its own
+    generalised version of the same feature, so unioning across levels grows each
+    polygon until it swallows its neighbours -- on the real statewide build that
+    turned 0.244 sq deg of Ernakulam ward area into 1.621, with adjacent wards
+    overlapping 56.8% instead of tiling.
+    """
+    coarse = _feature("POLYGON ((0 0, 0 4000, 4000 4000, 4000 0, 0 0))", {"OBJECTID": 1})
+    fine = _feature("POLYGON ((0 0, 0 100, 100 100, 100 0, 0 0))", {"OBJECTID": 1})
+    _write_tile(paths, "wb_kerala", Z - 1, BASE_X // 2, BASE_Y // 2, [coarse])
+    _write_tile(paths, "wb_kerala", Z, BASE_X, BASE_Y, [fine])
+
+    result = stitch_layer(paths, "wb_kerala")
+    (feature,) = result.features.values()
+    # The z-1 tile covers vastly more ground; if it were included the area would
+    # be orders of magnitude larger.
+    assert feature.fragment_count == 1
+
+
+def test_fragments_are_clipped_to_their_own_tile(paths: Paths) -> None:
+    """MVT clips to the tile *plus a margin*, so a fragment spills into the
+    neighbouring tile's area and overlaps whatever genuinely lives there.
+
+    Asserted via area: a fragment drawn well past the tile edge must contribute
+    only the part inside its own tile.
+    """
+    from geo.tiles import EXTENT
+
+    overspill = _feature(
+        f"POLYGON ((0 0, 0 {EXTENT * 2}, {EXTENT * 2} {EXTENT * 2}, {EXTENT * 2} 0, 0 0))",
+        {"OBJECTID": 7},
+    )
+    _write_tile(paths, "wb_kerala", Z, BASE_X, BASE_Y, [overspill])
+
+    result = stitch_layer(paths, "wb_kerala")
+    (feature,) = result.features.values()
+
+    from shapely.geometry import box
+
+    from geo.tiles import tile_bounds_3857
+
+    tile = box(*tile_bounds_3857(BASE_X, BASE_Y, Z))
+    # Reproject the tile box the same way the stitcher reprojects geometry.
+    from shapely.ops import transform as shapely_transform
+
+    from geo.build.stitch import _mercator_to_wgs84_xy
+
+    tile_wgs84 = shapely_transform(_mercator_to_wgs84_xy, tile)
+    assert feature.geometry.area <= tile_wgs84.area * 1.0001

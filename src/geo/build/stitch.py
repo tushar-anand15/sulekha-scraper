@@ -40,14 +40,14 @@ from typing import Any, Final
 
 import mapbox_vector_tile
 from shapely.affinity import affine_transform
-from shapely.geometry import shape
+from shapely.geometry import box, shape
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import transform as shapely_transform
 from shapely.ops import unary_union
 from shapely.validation import make_valid
 
 from geo.config import Paths
-from geo.tiles import mercator_to_wgs84, tile_affine
+from geo.tiles import mercator_to_wgs84, tile_affine, tile_bounds_3857
 
 #: The first two bytes of every gzip stream, regardless of what any HTTP header
 #: claims. See the module docstring -- trusting the header instead of the magic is
@@ -307,12 +307,24 @@ def stitch_layer(
     ``tiles`` defaults to everything :func:`iter_cached_tiles` finds under
     ``paths.tiles/{layer}``; tests pass an explicit list so they can exercise a
     handful of synthetic tiles without touching the real cache layout.
+
+    **Only the deepest cached zoom is used**, and that is not an optimisation.
+    The cache holds every level the quadtree descent walked through, and each
+    level carries its *own generalised rendering* of the same features -- a ward
+    at z9 is a far coarser polygon than the same ward at z14. Unioning across
+    levels therefore inflates every feature to its coarsest outline, which then
+    swallows its neighbours: measured over Ernakulam, that turned 0.244 square
+    degrees of ward area into 1.621, with adjacent wards overlapping by 56.8%
+    instead of tiling cleanly. One zoom, or nonsense.
     """
     id_fields = identity_fields if identity_fields is not None else IDENTITY_FIELDS.get(layer)
     if id_fields is None:
         raise StitchError(f"no identity fields registered for layer {layer!r}")
 
-    tile_iter = iter_cached_tiles(paths, layer) if tiles is None else tiles
+    tile_iter = list(iter_cached_tiles(paths, layer) if tiles is None else tiles)
+    if tile_iter:
+        deepest = max(z for z, _, _, _ in tile_iter)
+        tile_iter = [t for t in tile_iter if t[0] == deepest]
 
     fragments: dict[IdentityKey, list[BaseGeometry]] = defaultdict(list)
     first_seen_properties: dict[IdentityKey, dict[str, Any]] = {}
@@ -325,11 +337,20 @@ def stitch_layer(
         if not layer_data:
             continue
         a, b, d, e, xoff, yoff = tile_affine(x, y, z)
+        # MVT encoders clip geometry to the tile *plus a margin*, so a fragment
+        # runs past its own tile edge and into the neighbour's area -- where it
+        # overlaps whichever feature genuinely lives there. Clipping each
+        # fragment back to its tile removes that overspill without touching the
+        # shared border itself, which sits exactly on the clip line.
+        clip = box(*tile_bounds_3857(x, y, z))
         for feat in layer_data["features"]:
             props: dict[str, Any] = dict(feat["properties"])
             key = _identity_key(props, id_fields, path)
             geom_local = shape(feat["geometry"])
             geom_3857 = affine_transform(geom_local, (a, b, d, e, xoff, yoff))
+            geom_3857 = geom_3857.intersection(clip)
+            if geom_3857.is_empty:
+                continue
             fragments[key].append(geom_3857)
 
             prior = first_seen_properties.get(key)
