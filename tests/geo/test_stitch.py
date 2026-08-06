@@ -282,15 +282,15 @@ def test_reconciliation_reports_counts_per_district(paths: Paths) -> None:
     features = [
         _feature(
             "POLYGON ((0 0, 0 100, 100 100, 100 0, 0 0))",
-            {"District": "Kollam", "Block Panc": "A", "Ward No": 1},
+            {"District": "Kollam", "Localbody": "Parassala", "Block Panc": "A", "Ward No": 1},
         ),
         _feature(
             "POLYGON ((200 200, 200 300, 300 300, 300 200, 200 200))",
-            {"District": "Kollam", "Block Panc": "A", "Ward No": 2},
+            {"District": "Kollam", "Localbody": "Parassala", "Block Panc": "A", "Ward No": 2},
         ),
         _feature(
             "POLYGON ((500 500, 500 600, 600 600, 600 500, 500 500))",
-            {"District": "Idukki", "Block Panc": "B", "Ward No": 1},
+            {"District": "Idukki", "Localbody": "Adimaly", "Block Panc": "B", "Ward No": 1},
         ),
     ]
     _write_tile(paths, layer, Z, BASE_X, BASE_Y, features)

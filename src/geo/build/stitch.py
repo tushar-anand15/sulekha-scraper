@@ -62,17 +62,33 @@ GZIP_MAGIC: Final = b"\x1f\x8b"
 #: keys below are a documented best guess -- nest the finer tier's identity inside
 #: the coarser one's, since that is what "membership" means -- and should be
 #: revisited against the real schema once Unit 3's fetch populates the cache.
+#: The MVT layer name inside a tile is not always the layer name in its URL. The two
+#: tier-membership layers drop the ``with_``: ``kerala_bp_with_lsgd`` serves a layer
+#: called ``kerala_bp_lsgd``. Looking up the URL name finds nothing and, because an
+#: absent layer is indistinguishable from an empty tile, the whole layer stitches to
+#: zero features without a single error being raised.
+MVT_LAYER_NAME: Final[dict[str, str]] = {
+    "kerala_bp_with_lsgd": "kerala_bp_lsgd",
+    "kerala_dp_with_block": "kerala_dp_block",
+}
+
+#: Identity keys, established against the real cached tiles rather than guessed.
+#:
+#: The naming is a trap worth spelling out: in ``kerala_bp``, ``Localbody`` is the
+#: *Block Panchayat* and ``Block Panc`` is the *division* within it -- the opposite
+#: of what both names suggest. In ``kerala_dp``, ``Localbody`` is the District
+#: Panchayat and ``Ward Name`` is the division.
+#:
+#: Division number alone is not unique: keying ``kerala_dp`` on number yields 345
+#: divisions where the name yields 346, because two divisions share a number. Both
+#: are carried so a duplicate number cannot silently merge two distinct divisions.
 IDENTITY_FIELDS: Final[dict[str, tuple[str, ...]]] = {
     "wb_kerala": ("OBJECTID",),
     "lb_kerala": ("lb_code",),
-    "kerala_bp": ("District", "Block Panc", "Ward No"),
-    "kerala_dp": ("District", "Localbody", "Ward No"),
-    # Best-guess composite (see note above): a BP division carrying the GP ward
-    # nested inside it.
-    "kerala_bp_with_lsgd": ("District", "Block Panc", "Ward No", "Lsgd_Name", "Ward_No"),
-    # Best-guess composite: a DP division carrying the Block Panchayat nested
-    # inside it.
-    "kerala_dp_with_block": ("District", "Localbody", "Ward No", "Block Panc"),
+    "kerala_bp": ("District", "Localbody", "Ward No", "Block Panc"),
+    "kerala_dp": ("District", "Localbody", "Ward No", "Ward Name"),
+    "kerala_bp_with_lsgd": ("District", "Localbody", "Ward No", "LSGD", "Ward_Name"),
+    "kerala_dp_with_block": ("District", "Localbody", "Ward No", "Block", "Ward_Name"),
 }
 
 #: The field holding a district name, for the reconciliation helper. `lb_kerala`
@@ -283,7 +299,7 @@ def stitch_layer(
 
     for z, x, y, path in tile_iter:
         decoded = decode_tile(path)
-        layer_data = decoded.get(layer)
+        layer_data = decoded.get(MVT_LAYER_NAME.get(layer, layer))
         if not layer_data:
             continue
         a, b, d, e, xoff, yoff = tile_affine(x, y, z)
