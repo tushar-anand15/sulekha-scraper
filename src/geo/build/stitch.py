@@ -254,11 +254,14 @@ def _repair(geom: BaseGeometry) -> BaseGeometry:
     ``buffer(0)`` is the fallback for the rare case ``make_valid`` itself cannot
     handle.
     """
-    if geom.is_valid:
-        return geom
-    repaired = make_valid(geom)
+    repaired = geom if geom.is_valid else make_valid(geom)
     if not repaired.is_valid:
         repaired = repaired.buffer(0)
+    # Coercion runs unconditionally, not only on the invalid branch. A
+    # GeometryCollection of polygons plus a stray edge is perfectly *valid*, so an
+    # early return on `is_valid` let 275 of them through to the output -- and
+    # clipping fragments to their tile produces exactly that shape whenever a
+    # fragment touches the tile edge tangentially.
     return _polygonal_only(repaired)
 
 
@@ -348,8 +351,8 @@ def stitch_layer(
             key = _identity_key(props, id_fields, path)
             geom_local = shape(feat["geometry"])
             geom_3857 = affine_transform(geom_local, (a, b, d, e, xoff, yoff))
-            geom_3857 = geom_3857.intersection(clip)
-            if geom_3857.is_empty:
+            geom_3857 = _polygonal_only(geom_3857.intersection(clip))
+            if geom_3857.is_empty or geom_3857.geom_type not in ("Polygon", "MultiPolygon"):
                 continue
             fragments[key].append(geom_3857)
 

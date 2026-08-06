@@ -437,3 +437,23 @@ def test_fragments_are_clipped_to_their_own_tile(paths: Paths) -> None:
 
     tile_wgs84 = shapely_transform(_mercator_to_wgs84_xy, tile)
     assert feature.geometry.area <= tile_wgs84.area * 1.0001
+
+
+def test_a_valid_geometry_collection_is_still_coerced_to_areal():
+    """Validity is not the test -- being an area is.
+
+    A GeometryCollection of polygons plus a dangling edge is perfectly valid, so
+    an early return on `is_valid` shipped 275 of them. Clipping a fragment to its
+    tile produces exactly that whenever the fragment touches the edge tangentially.
+    """
+    from shapely.geometry import GeometryCollection, LineString, Polygon
+
+    from geo.build.stitch import _repair
+
+    collection = GeometryCollection(
+        [Polygon([(0, 0), (0, 1), (1, 1), (1, 0)]), LineString([(2, 2), (3, 3)])]
+    )
+    assert collection.is_valid
+    out = _repair(collection)
+    assert out.geom_type in ("Polygon", "MultiPolygon")
+    assert out.area == pytest.approx(1.0)
