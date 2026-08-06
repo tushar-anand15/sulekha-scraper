@@ -30,6 +30,7 @@ map that is silently false. Better to fail the build.
 from __future__ import annotations
 
 import csv
+import difflib
 from collections import Counter, defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
@@ -163,6 +164,58 @@ def ward_agreement(ours: Sequence[str], theirs: Sequence[str]) -> float:
     return agreed / len(ours)
 
 
+class DistrictMismatch(RuntimeError):
+    """A district on one side has no counterpart on the other."""
+
+
+def pair_districts(ours: Iterable[str], theirs: Iterable[str]) -> dict[str, str]:
+    """Map each of their district spellings onto ours, normalised.
+
+    This exists because the district is the *scoping key* for local-body pairing,
+    and that makes a mismatch here categorically worse than a mismatch anywhere
+    else: a body whose name is spelled differently fails to match on its own, but
+    a district whose name is spelled differently disqualifies every body inside it
+    at once, and does so silently -- they simply look unpaired.
+
+    That is not hypothetical. Kerala has fourteen districts; thirteen agree
+    exactly between the two sources. The fourteenth is ``KASARGOD`` on our side
+    and ``Kasaragod`` on KSMART's -- one letter -- and before this function
+    existed it cost all 38 local bodies in that district.
+
+    Fourteen is small enough to demand every one resolve, so an unmatched
+    district raises instead of degrading quietly.
+    """
+    ours_norm = {normalize(d): d for d in ours if d}
+    mapping: dict[str, str] = {}
+    unresolved: list[str] = []
+
+    for name in theirs:
+        if not name:
+            continue
+        key = normalize(name)
+        if key in ours_norm:
+            mapping[key] = key
+            continue
+        close = difflib.get_close_matches(key, list(ours_norm), n=2, cutoff=0.85)
+        if len(close) == 1:
+            mapping[key] = close[0]
+        elif len(close) > 1:
+            # Two plausible districts is not a near-miss, it is ambiguity. Kerala's
+            # district names are distinctive enough that this should never happen;
+            # if it does, guessing would mis-scope a whole district's bodies.
+            unresolved.append(f"{name} (ambiguous: {close})")
+        else:
+            unresolved.append(name)
+
+    if unresolved:
+        raise DistrictMismatch(
+            "districts with no counterpart: "
+            + ", ".join(unresolved)
+            + f". Known: {sorted(ours_norm)}"
+        )
+    return mapping
+
+
 def load_overrides(path: Path) -> dict[str, str]:
     """Hand-maintained ``lb_code -> ksmart_lb_code`` pairings, consulted first.
 
@@ -192,10 +245,18 @@ def build_crosswalk(
     overrides = dict(overrides or {})
 
     by_code = {lb.code: lb for lb in theirs}
+
+    # Reconcile district spellings before anything is keyed by them -- see
+    # pair_districts for why a mismatch here is silently catastrophic.
+    district_alias = pair_districts(
+        (lb.district for lb in ours), (lb.district for lb in theirs)
+    )
+
     # Their names are not unique globally, only within (district, tier).
     by_key: dict[tuple[str, str], dict[str, LocalBody]] = defaultdict(dict)
     for lb in theirs:
-        by_key[(normalize(lb.district), lb.lb_type)][normalize(lb.name)] = lb
+        district = district_alias.get(normalize(lb.district), normalize(lb.district))
+        by_key[(district, lb.lb_type)][normalize(lb.name)] = lb
 
     matches: list[Match] = []
     rejected: list[Match] = []

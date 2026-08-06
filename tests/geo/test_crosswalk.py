@@ -210,3 +210,62 @@ def test_written_crosswalk_is_reviewable(tmp_path):
     assert rows[0]["ksmart_lb_code"] == "G020103"
     assert rows[0]["match_method"] == "exact"
     assert rows[0]["ward_agreement"] == "1.000"
+
+
+# --- district reconciliation ------------------------------------------------
+
+from geo.build.crosswalk import DistrictMismatch, pair_districts  # noqa: E402
+
+KERALA_OURS = ["KASARGOD", "KOLLAM", "THRISSUR", "WAYANAD"]
+KERALA_THEIRS = ["Kasaragod", "Kollam", "Thrissur", "Wayanad"]
+
+
+def test_identical_districts_map_to_themselves():
+    m = pair_districts(["KOLLAM"], ["Kollam"])
+    assert m == {"KOLLAM": "KOLLAM"}
+
+
+def test_kasaragod_spelling_difference_is_reconciled():
+    """The real one-letter difference that cost an entire district.
+
+    Ours spells it KASARGOD, KSMART spells it Kasaragod. Thirteen of fourteen
+    districts agree exactly; this one did not, and because district is the
+    scoping key it silently disqualified all 38 local bodies inside it.
+    """
+    m = pair_districts(KERALA_OURS, KERALA_THEIRS)
+    assert m["KASARAGOD"] == "KASARGOD"
+    assert len(m) == 4
+
+
+def test_district_with_no_counterpart_raises_rather_than_degrading():
+    """Failing loudly matters more here than anywhere else in the module: the
+    quiet alternative looks like 'those bodies just didn't match'."""
+    with pytest.raises(DistrictMismatch, match="Ernakulam"):
+        pair_districts(KERALA_OURS, KERALA_THEIRS + ["Ernakulam"])
+
+
+def test_ambiguous_district_is_not_guessed():
+    with pytest.raises(DistrictMismatch, match="ambiguous"):
+        pair_districts(["KOLLAM", "KOLLAMX"], ["Kollamy"])
+
+
+def test_blank_districts_are_ignored_not_matched():
+    assert pair_districts(["KOLLAM", ""], ["Kollam", ""]) == {"KOLLAM": "KOLLAM"}
+
+
+def test_crosswalk_pairs_across_a_district_spelling_difference():
+    """End-to-end: the bug this guards against, at the level it actually bit."""
+    r = build_crosswalk(
+        [ours("G14001", "Kumbadaje", district="KASARGOD", wards=WARDS_A)],
+        [theirs("G140202", "Kumbadaje", district="Kasaragod", wards=WARDS_A)],
+    )
+    assert r.resolved_count == 1
+    assert not r.unresolved
+
+
+def test_crosswalk_surfaces_an_unknown_district():
+    with pytest.raises(DistrictMismatch):
+        build_crosswalk(
+            [ours("G02003", "Clappana", district="KOLLAM", wards=WARDS_A)],
+            [theirs("G020103", "Clappana", district="Atlantis", wards=WARDS_A)],
+        )

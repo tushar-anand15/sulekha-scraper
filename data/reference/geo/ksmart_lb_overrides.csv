@@ -1,0 +1,10 @@
+lb_code,ksmart_lb_code,our_name,ksmart_name,reason
+G02033,G020508,Aryankavu,Ariencavu,Transliteration; no shared prefix so the cascade could not reach it
+G06051,G060804,Peermade,Peerumedu,Transliteration (-made / -medu)
+G08057,G080905,Arimbur,Arimpoor,Transliteration (-bur / -poor)
+G08078,G081501,Aloor,Alur,Transliteration; too short for the fuzzy cutoff
+G09088,G091205,Puthukode,Puducode,"Puthu / Pudu are the same morpheme, spelled apart"
+G10077,G101007,Oorakam,Uragam,Transliteration (Oo- / U-, -kam / -gam)
+M10072,M100900,Thanoor,Tanur,Transliteration (Th- / T-)
+G10029,G100507,Areacode,Areekkode,"Fuzzy matching preferred 'Alamcode'; the ward gate rejected it. Areekkode is the true pair"
+G02046,G020703,East Kallada,Kizhakkekallada,"Malayalam 'Kizhakke' means East. Fuzzy matching offered 'West Kallada' -- the exact opposite -- and the ward gate rejected it"
