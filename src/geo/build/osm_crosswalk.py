@@ -81,8 +81,14 @@ TIER_MAP: Final[dict[str, str]] = {
 #: found across all 1,199 bodies. A body whose district cannot be resolved to
 #: ours falls out of the pairing pool entirely and never reaches the ward- or
 #: name-level checks, so this fix has to happen before pooling, not after.
+#: District spellings that differ between our data and the OSM release. Both sides
+#: are run through this, so either spelling may be the key. These are variants of
+#: one name, not errors -- an OSM feature whose ``District`` names a genuinely
+#: different district is handled by :func:`exact_code_matches` refusing the code and
+#: by the override file, not here.
 DISTRICT_ALIASES: Final[dict[str, str]] = {
     "KASARAGOD": "KASARGOD",
+    "KOZHIKKODE": "KOZHIKODE",
 }
 
 #: Strips the tier suffix a dissolved body's name inherits from its source
@@ -92,7 +98,22 @@ DISTRICT_ALIASES: Final[dict[str, str]] = {
 #: (``"Thoonerry Block Panchayath"``) -- both forms were observed, and a
 #: suffix strip that only matched one would leave the other's name cluttered
 #: with eleven characters of noise the fuzzy cascade cannot see past.
-_SUFFIX_RE: Final = re.compile(r"\s+(Block|District)\s+Panchayath?\s*$", re.IGNORECASE)
+#: Trailing tier labels, in every spelling the release actually uses.
+#:
+#: ``Block``/``District`` come from ``BlockName``/``DP_Name``, which the source
+#: reuses as a human label rather than an identifier. The Grama Panchayat forms are
+#: messier because they are free text typed by different mappers: ``Grampanchayat``,
+#: ``Gramapanchayat``, ``Gramapanchayath`` and ``grama panchayat`` all occur, with
+#: and without the internal space. Leaving them on defeats the name cascade
+#: entirely -- ``"Kallara Grampanchayat"`` never matches our ``"Kallara"`` -- which
+#: is only survivable while the code shortcut hides it.
+_SUFFIX_RE: Final = re.compile(
+    r"\s+("
+    r"(Block|District)\s+Panchayath?"
+    r"|Grama?\s*Panchayath?"
+    r")\s*$",
+    re.IGNORECASE,
+)
 
 OVERRIDE_FILENAME: Final = "osm_lb_overrides.csv"
 CROSSWALK_FILENAME: Final = "osm_lb_crosswalk.csv"
@@ -188,7 +209,11 @@ def local_bodies_from_osm_features(
         bodies.append(
             LocalBody(
                 code=str(code),
-                name=str(name),
+                # Stripped here too, not only for dissolved bodies. These names are
+                # free text: "Kallara Grampanchayat", "Thuravoor grama panchayat".
+                # Left intact they never match our bare "Kallara", and that stayed
+                # invisible only because the exact-code shortcut answered first.
+                name=strip_tier_suffix(str(name)),
                 lb_type=tier,
                 district=resolve_district(str(district) if district else None),
             )
@@ -238,6 +263,22 @@ def exact_code_matches(
     through to the name cascade instead, where district scoping disambiguates
     it correctly.
 
+    A matching code is also **corroborated against the district** before it is
+    trusted, because in this release the code is not always the field that is
+    right. Three pairs of same-named Grama Panchayats carry each other's
+    ``LSGI_Code``::
+
+        Kallara    LSGI=G01051  District=Kottayam            geometry in Kottayam
+        Kallara    LSGI=G05008  District=Thiruvananthapuram  geometry in TVM
+
+    Our ``G01051`` is the Thiruvananthapuram one. The ``District`` field and the
+    geometry agree with each other; only the code disagrees. Taking the code at
+    face value put six bodies -- Kallara, Thuravoor and Kalady, twice each --
+    122 km, 51 km and 86 km from where they belong, in both the 2015 and 2020
+    layers, with nothing downstream able to notice. A code that contradicts its
+    own district is not evidence, so it falls through to the name cascade, where
+    district scoping resolves it correctly.
+
     This dict is fed to :func:`geo.build.crosswalk.build_crosswalk` as its
     ``overrides`` argument -- an auto-detected exact code match and a
     hand-reviewed override are the same shape to that function, "trust this
@@ -246,8 +287,22 @@ def exact_code_matches(
     """
     counts = Counter(lb.code for lb in theirs)
     by_code = {lb.code: lb for lb in theirs if counts[lb.code] == 1}
-    our_codes = {lb.code for lb in ours}
-    return {code: code for code in our_codes if code in by_code}
+    return {
+        lb.code: lb.code
+        for lb in ours
+        if lb.code in by_code and same_district(by_code[lb.code].district, lb.district)
+    }
+
+
+def same_district(a: str | None, b: str | None) -> bool:
+    """Whether two district spellings name the same district.
+
+    Compared through the alias table *and* case-folded. ``resolve_district``
+    alone is not enough: it applies aliases but returns the original casing, so
+    our ``THIRUVANANTHAPURAM`` and OSM's ``Thiruvananthapuram`` compare unequal
+    and every single body looks like a district mismatch.
+    """
+    return normalize(resolve_district(a)) == normalize(resolve_district(b))
 
 
 def load_overrides(path: Path) -> dict[str, str]:

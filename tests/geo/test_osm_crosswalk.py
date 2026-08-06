@@ -279,12 +279,19 @@ def test_missing_overrides_file_is_not_an_error(tmp_path):
 def test_committed_overrides_file_is_at_least_header_only():
     """R3's gate needs this file to exist and be readable even before any
     override is hand-added -- a missing file and an empty-but-present file
-    must not be conflated by a build script checking for its presence."""
+    must not be conflated by a build script checking for its presence.
+
+    The required columns are asserted as a subset rather than as the whole
+    header. ``load_overrides`` reads two columns and ignores the rest, and this
+    file is meant to be read by people: every row carries a ``reason`` saying why
+    a human overruled the automatic pairing, which is the only thing that makes
+    the file reviewable later.
+    """
     paths = resolve_paths()
     path = paths.reference / "osm_lb_overrides.csv"
     assert path.exists()
-    header = path.read_text(encoding="utf-8").splitlines()[0]
-    assert header == "lb_code,osm_code"
+    header = path.read_text(encoding="utf-8").splitlines()[0].split(",")
+    assert {"lb_code", "osm_code"} <= set(header)
 
 
 # --- real-data integration ----------------------------------------------------

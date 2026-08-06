@@ -165,37 +165,42 @@ def _load(path: Path, tiers: frozenset[str] = BASE_TIERS) -> list[dict[str, Any]
 def ruling_front_figure(paths: Paths, years: Sequence[str] = ("2015", "2020", "2025")) -> Path:
     """Small multiple: which front rules each local body, one panel per cycle.
 
-    Every panel is drawn from **one** basemap rather than each cycle's own geometry.
-    The point of the figure is political change, and letting the boundaries move
-    between panels would mix cartographic difference into a comparison that is meant
-    to isolate the political kind.
+    **Each panel uses its own cycle's boundaries**, because we have them: 2015 and
+    2020 from the OpenStreetMap snapshot, 2025 from the KSMART delimitation. Drawing
+    all three from one source would be quietly overriding real data with a
+    convenient assumption -- and the two sources genuinely differ, at a median IoU
+    of 0.875 per body, so the substitution is not free.
+
+    2015 and 2020 do share one physical polygon set, because that is the honest
+    state of the sources: there is no per-cycle local-body geometry for either year,
+    only the single November 2020 snapshot. That is a property of what exists, not a
+    choice made here, and the caption says so.
     """
-    base = {
-        f["properties"]["lb_code"]: shape(f["geometry"])
-        for f in _load(paths.final / "local_bodies_2020.geojson")
-    }
-    fronts = {
+    layers = {
         year: {
-            f["properties"]["lb_code"]: f["properties"].get("lb_ruling_front") or None
+            f["properties"]["lb_code"]: (
+                shape(f["geometry"]),
+                f["properties"].get("lb_ruling_front") or None,
+            )
             for f in _load(paths.final / f"local_bodies_{year}.geojson")
         }
         for year in years
     }
-    codes = sorted(set(base).intersection(*(set(v) for v in fronts.values())))
-    bounds = _bounds(base[c] for c in codes)
+    codes = sorted(set.intersection(*(set(v) for v in layers.values())))
+    bounds = _bounds(geom for year in years for geom, _ in (layers[year][c] for c in codes))
 
     fig, axes = plt.subplots(1, len(years), figsize=(4.5 * len(years), 9.6), facecolor=SURFACE)
     fig.subplots_adjust(left=0.015, right=0.985, top=0.815, bottom=0.115, wspace=0.01)
     for ax, year in zip(axes, years):
-        by_code = fronts[year]
+        cycle = layers[year]
         _draw(
             ax,
-            [base[c] for c in codes],
-            [FRONT_COLOURS.get(by_code[c], HUNG) for c in codes],
+            [cycle[c][0] for c in codes],
+            [FRONT_COLOURS.get(cycle[c][1], HUNG) for c in codes],
             linewidth=0.12,
         )
         _frame(ax, bounds)
-        tally = collections.Counter(by_code[c] or "hung" for c in codes)
+        tally = collections.Counter(cycle[c][1] or "hung" for c in codes)
         lead = max((k for k in tally if k != "hung"), key=lambda k: tally[k])
         ax.set_title(
             f"{year}\n{lead} leads with {tally[lead]} of {len(codes)}",
@@ -216,15 +221,15 @@ def ruling_front_figure(paths: Paths, years: Sequence[str] = ("2015", "2020", "2
     fig.text(
         0.5, 0.943,
         f"Grama Panchayats, Municipalities and Corporations — {len(codes)} bodies, "
-        "identical basemap in all three panels",
+        "each panel drawn from its own cycle's boundaries",
         ha="center", va="top", color=MUTED, fontsize=12.5,
     )
     fig.text(
         0.5, 0.018,
-        "Boundaries: OpenStreetMap via opendatakerala (ODbL), Nov 2020 snapshot — used for all three "
-        "years, so differences are political, not cartographic.\n"
-        "Results: Kerala State Election Commission. Block and District Panchayats are excluded: they "
-        "nest above these bodies.",
+        "Boundaries — 2015 and 2020: OpenStreetMap via opendatakerala (ODbL). Those two cycles share one "
+        "Nov 2020 snapshot because no per-cycle local-body geometry exists for either.\n"
+        "2025: Delimitation Commission of Kerala via wardmap.ksmart.live. Results: Kerala State Election "
+        "Commission. Block and District Panchayats are excluded — they nest above these bodies.",
         ha="center", color=MUTED, fontsize=9.5, linespacing=1.6,
     )
     out = paths.maps / "kerala_ruling_front_2015_2020_2025.png"

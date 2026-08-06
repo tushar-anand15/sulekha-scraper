@@ -1,5 +1,9 @@
-lb_code,osm_code
-B08077,Q13112085
-B10109,Q13110112
-B11121,Q16137647
-G05059,G051004
+lb_code,osm_code,reason
+B08077,Q13112085,Block Panchayat name differs between our data and the OSM BlockName label
+B10109,Q13110112,Block Panchayat name differs between our data and the OSM BlockName label
+B11121,Q16137647,Block Panchayat name differs between our data and the OSM BlockName label
+G05059,G051004,Grama Panchayat name differs; code confirmed by hand
+G02005,G02005,"OSM tags this Alappuzha; Alappad is in Kollam. The code is right and the District field is wrong, so the automatic district corroboration refuses it"
+G06014,G06014,"OSM tags this Ernakulam; Edamalakudy is in Idukki. Same shape as G02005 -- correct code, wrong District tag"
+G13031,G13031,"OSM tags this Thrissur, but its geometry sits at 12.0N in Kannur and the code is ours. Same shape as G02005: right code, wrong District tag"
+G08073,G08073,"The mirror of G13031 -- OSM tags this Kannur, geometry sits at 10.3N in Thrissur. Their District tags are swapped between the two Padiyoors; the codes are not"
