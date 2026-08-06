@@ -32,7 +32,15 @@ refs/
 
 # Elections raw sources and rebuilt outputs: ~2.9 GB of caches plus the 813 MB
 # 2010 HTML mirror. Reconstructed from refs/Elections.zip -- see the runbook.
-data/
+#
+# Written as `data/*` rather than `data/` on purpose: git will not descend into an
+# excluded directory, so a bare `data/` makes the negation below unreachable.
+data/*
+
+# ...except data/reference, which is hand-maintained INPUT, not derived output:
+# the party-front table, and the geometry crosswalks whose whole value is that a
+# human reviewed them. These must survive a fresh clone.
+!data/reference/
 
 # macOS
 .DS_Store
