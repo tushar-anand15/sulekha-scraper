@@ -23,8 +23,10 @@ easy way:
 from __future__ import annotations
 
 import collections
+import csv
 import itertools
 import json
+import logging
 from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
 from typing import Any, Final
@@ -75,6 +77,16 @@ WARD_LABELS: Final[dict[str, str]] = {
 BASE_TIERS: Final[frozenset[str]] = frozenset(
     {"Grama Panchayat", "Municipality", "Corporation"}
 )
+
+#: Single-hue ramps for magnitude, light to dark, lightness strictly monotonic.
+#: Never a rainbow: a hue sequence has no inherent order, so readers invent one.
+SEQUENTIAL_VIOLET: Final[tuple[str, ...]] = ("#EDE9FE", "#C4B5FD", "#A78BFA", "#7C3AED", "#5B21B6")
+SEQUENTIAL_CYAN: Final[tuple[str, ...]] = ("#E0F2FE", "#7DD3FC", "#38BDF8", "#0284C7", "#075985")
+
+#: Communities with reserved seats. "None" is the 88% majority and takes a neutral --
+#: it is the absence of a community reservation, not a third community.
+RESERVATION_COLOURS: Final[dict[str, str]] = {"SC": "#7C3AED", "ST": "#0891B2"}
+NO_RESERVATION: Final = "#e4e4e7"
 
 #: cos(10.5N). Kerala is tall and narrow; without this it renders visibly squashed.
 ASPECT: Final = 1 / 0.983
@@ -160,6 +172,22 @@ def _bounds(geometries: Iterable[BaseGeometry]) -> tuple[float, float, float, fl
 def _load(path: Path, tiers: frozenset[str] = BASE_TIERS) -> list[dict[str, Any]]:
     data = json.loads(path.read_text(encoding="utf-8"))
     return [f for f in data["features"] if f["properties"].get("lb_type") in tiers]
+
+
+def _winners(paths: Paths, year: str) -> list[dict[str, str]]:
+    """Winning candidate rows for one cycle, three tiers only.
+
+    Read from ``candidates_<year>.csv`` rather than the ward file because gender,
+    age and the candidate's own party live there; the ward file carries only the
+    winner's name and party.
+    """
+    path = paths.elections / year / f"candidates_{year}.csv"
+    with path.open(newline="", encoding="utf-8-sig") as fh:
+        return [
+            row
+            for row in csv.DictReader(fh)
+            if row.get("status") == "won" and row.get("lb_type") in BASE_TIERS
+        ]
 
 
 def ruling_front_figure(paths: Paths, years: Sequence[str] = ("2015", "2020", "2025")) -> Path:
@@ -313,13 +341,261 @@ def local_body_zoom_figure(paths: Paths, lb_codes: Sequence[str], *, label: str)
     return out
 
 
-def render_all(paths: Paths) -> list[Path]:
-    """Every figure, in the order a reader should meet them."""
-    written = [ruling_front_figure(paths), ward_winner_figure(paths)]
-    try:
-        written.append(
-            local_body_zoom_figure(paths, ["C07003", "G07064"], label="Kochi Corporation + one GP")
+def _quantile_bins(values: Sequence[float], n: int) -> list[float]:
+    """``n - 1`` cut points at equal quantiles of the observed values.
+
+    Quantiles rather than equal-width bins: these distributions are skewed (most
+    local bodies elect few or no women to unreserved seats), and equal-width bins
+    would put almost everything in the first class and show a flat map.
+    """
+    ordered = sorted(values)
+    if not ordered or n < 2:
+        return []
+    return [ordered[int(len(ordered) * i / n)] for i in range(1, n)]
+
+
+def _bin_index(value: float, cuts: Sequence[float]) -> int:
+    for i, cut in enumerate(cuts):
+        if value < cut:
+            return i
+    return len(cuts)
+
+
+def _sequential_legend(ax, ramp: Sequence[str], labels: Sequence[str], title: str) -> None:
+    handles = [
+        Line2D([], [], marker="s", linestyle="", markersize=11, markerfacecolor=colour,
+               markeredgecolor=SURFACE, label=label)
+        for colour, label in zip(ramp, labels)
+    ]
+    ax.legend(handles=handles, loc="upper right", frameon=False, fontsize=11,
+              labelcolor=INK, title=title, title_fontsize=12)
+
+
+def women_in_open_seats_figure(
+    paths: Paths, years: Sequence[str] = ("2015", "2020", "2025")
+) -> Path:
+    """Share of *unreserved* seats won by women, per local body.
+
+    Deliberately not a map of winner gender. Kerala reserves half its seats for
+    women, so ~55% of all winners are women -- and mapping that mostly redraws the
+    reservation. Worse, in this dataset about half the winner genders were *derived
+    from* the ward being woman-reserved (``gender_source == "reserved_ward"``), so a
+    raw gender map would partly be the reservation map wearing a different label.
+
+    Restricting to General, SC and ST wards -- seats no woman was guaranteed --
+    removes both the tautology and the circularity. Statewide that share is 6.2%,
+    7.7% and 7.5% across the three cycles; the map shows where it is not.
+    """
+    figures = {}
+    for year in years:
+        geoms = {
+            f["properties"]["lb_code"]: shape(f["geometry"])
+            for f in _load(paths.final / f"local_bodies_{year}.geojson")
+        }
+        won = collections.defaultdict(lambda: [0, 0])
+        for row in _winners(paths, year):
+            if (row.get("ward_reservation") or "").strip() in ("General", "SC", "ST"):
+                tally = won[row["lb_code"]]
+                tally[1] += 1
+                if (row.get("candidate_gender") or "").upper().startswith("F"):
+                    tally[0] += 1
+        figures[year] = (geoms, won)
+
+    codes = sorted(set.intersection(*(set(g) for g, _ in figures.values())))
+    shares = {
+        year: {c: (won[c][0] / won[c][1] if won.get(c) and won[c][1] else None) for c in codes}
+        for year, (_, won) in figures.items()
+    }
+    observed = [v for by_code in shares.values() for v in by_code.values() if v is not None]
+    # Zero gets its own class rather than a bin edge. This distribution is
+    # zero-inflated -- a large share of local bodies elect no women at all to an
+    # unreserved seat -- so quantile cuts land on 0 twice and produce a legend
+    # reading "under 0%" and "0-0%". "None at all" is also the single most
+    # meaningful value here, not a low end of a range.
+    positive = sorted(v for v in observed if v > 0)
+    cuts = _quantile_bins(positive, len(SEQUENTIAL_VIOLET) - 1)
+    zero_count = sum(1 for v in observed if v == 0)
+    if not cuts:
+        raise ValueError("no local body elected a woman to an unreserved seat; nothing to class")
+
+    fig, axes = plt.subplots(1, len(years), figsize=(4.5 * len(years), 9.6), facecolor=SURFACE)
+    fig.subplots_adjust(left=0.015, right=0.985, top=0.815, bottom=0.115, wspace=0.01)
+    bounds = _bounds(figures[years[-1]][0][c] for c in codes)
+    for ax, year in zip(axes, years):
+        geoms, _ = figures[year]
+        colours = [
+            NO_RESERVATION
+            if shares[year][c] is None
+            else SEQUENTIAL_VIOLET[0]
+            if shares[year][c] == 0
+            else SEQUENTIAL_VIOLET[1 + _bin_index(shares[year][c], cuts)]
+            for c in codes
+        ]
+        _draw(ax, [geoms[c] for c in codes], colours, linewidth=0.12)
+        _frame(ax, bounds)
+        vals = [v for v in shares[year].values() if v is not None]
+        ax.set_title(
+            f"{year}\n{100 * sum(vals) / len(vals):.1f}% average across bodies",
+            color=INK, fontsize=15, pad=12, linespacing=1.7,
         )
-    except (ValueError, FileNotFoundError):
-        pass  # the zoom is a check, not a deliverable; never fail a render over it
+
+    labels = (
+        ["none"]
+        + [f"up to {100 * cuts[0]:.0f}%"]
+        + [f"{100 * cuts[i]:.0f}–{100 * cuts[i + 1]:.0f}%" for i in range(len(cuts) - 1)]
+        + [f"over {100 * cuts[-1]:.0f}%"]
+    )
+    _sequential_legend(axes[-1], SEQUENTIAL_VIOLET, labels, "Women's share")
+    fig.suptitle("Where women win seats that were not reserved for them",
+                 color=INK, fontsize=22, y=0.982)
+    fig.text(
+        0.5, 0.943,
+        "Share of General, SC and ST ward seats won by women — the half of the council "
+        "no woman was guaranteed",
+        ha="center", va="top", color=MUTED, fontsize=12.5,
+    )
+    fig.text(
+        0.5, 0.018,
+        "Woman-reserved wards are excluded: they are 100% women by construction, and in this dataset "
+        "roughly half of all winner genders were inferred\n"
+        "from that reservation rather than observed. Statewide the unreserved share is 6.2% (2015), "
+        "7.7% (2020) and 7.5% (2025).\n"
+        f"The palest class is not a low share but zero — {zero_count:,} of {3 * len(codes):,} body-cycles "
+        "elected no woman to any unreserved seat. Results: Kerala State Election Commission.",
+        ha="center", color=MUTED, fontsize=9.5, linespacing=1.6,
+    )
+    out = paths.maps / "kerala_women_unreserved_seats.png"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out, dpi=170, facecolor=SURFACE)
+    plt.close(fig)
+    return out
+
+
+def community_reservation_figure(paths: Paths, year: str = "2025") -> Path:
+    """Which wards are reserved for Scheduled Castes or Scheduled Tribes.
+
+    Separated from the woman-reservation because they are orthogonal facts about a
+    ward, and a single six-way legend (General/Woman/SC/SC Woman/ST/ST Woman) makes
+    a reader decode two dimensions from one colour. ST reservation in particular is
+    tightly clustered -- Wayanad, Idukki, Attappady -- and that shape is the point.
+    """
+    features = _load(paths.final / f"wards_{year}.geojson")
+    geoms = [shape(f["geometry"]) for f in features]
+
+    def community(res: str | None) -> str | None:
+        text = (res or "").upper()
+        if text.startswith("SC"):
+            return "SC"
+        return "ST" if text.startswith("ST") else None
+
+    classes = [community(f["properties"].get("reservation")) for f in features]
+    tally = collections.Counter(c for c in classes if c)
+
+    fig, ax = plt.subplots(figsize=(8.6, 12.4), facecolor=SURFACE)
+    fig.subplots_adjust(left=0.02, right=0.98, top=0.885, bottom=0.115)
+    _draw(ax, geoms, [RESERVATION_COLOURS.get(c, NO_RESERVATION) for c in classes], linewidth=0.04)
+    _frame(ax, _bounds(geoms))
+    handles = [
+        Line2D([], [], marker="s", linestyle="", markersize=11,
+               markerfacecolor=RESERVATION_COLOURS[k], markeredgecolor=SURFACE,
+               label=f"{k} reserved — {tally[k]:,}")
+        for k in ("SC", "ST")
+    ] + [
+        Line2D([], [], marker="s", linestyle="", markersize=11, markerfacecolor=NO_RESERVATION,
+               markeredgecolor=SURFACE, label=f"no community reservation — {len(classes) - sum(tally.values()):,}")
+    ]
+    ax.legend(handles=handles, loc="upper right", frameon=False, fontsize=12,
+              labelcolor=INK, title="Ward reservation", title_fontsize=12.5)
+    fig.suptitle(f"Seats reserved for SC and ST — {year}", color=INK, fontsize=22, y=0.975)
+    fig.text(
+        0.5, 0.937,
+        f"{len(features):,} wards; SC and ST reservation tracks where those communities live",
+        ha="center", va="top", color=MUTED, fontsize=12.5,
+    )
+    fig.text(
+        0.5, 0.045,
+        "Woman-reservation is mapped separately: it is an orthogonal fact about a ward, and roughly "
+        "half of all wards carry it.\nBoundaries: 2025 delimitation via wardmap.ksmart.live. "
+        "Results: Kerala State Election Commission.",
+        ha="center", color=MUTED, fontsize=9.5, linespacing=1.6,
+    )
+    out = paths.maps / f"kerala_community_reservation_{year}.png"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out, dpi=170, facecolor=SURFACE)
+    plt.close(fig)
+    return out
+
+
+def margin_figure(paths: Paths, year: str = "2025") -> Path:
+    """How close each ward was, as the winner's lead over the runner-up.
+
+    Uncontested wards are drawn in the neutral, not as a maximal margin: nobody
+    stood against the winner, so there is no contest to be lopsided.
+    """
+    features = _load(paths.final / f"wards_{year}.geojson")
+    geoms = [shape(f["geometry"]) for f in features]
+    margins = [f["properties"].get("margin") for f in features]
+    observed = [m for m in margins if m is not None]
+    cuts = _quantile_bins(observed, len(SEQUENTIAL_CYAN))
+    if not cuts:
+        raise ValueError("no contested ward carries a margin; nothing to class")
+
+    fig, ax = plt.subplots(figsize=(8.6, 12.4), facecolor=SURFACE)
+    fig.subplots_adjust(left=0.02, right=0.98, top=0.885, bottom=0.115)
+    _draw(
+        ax, geoms,
+        [NO_RESERVATION if m is None else SEQUENTIAL_CYAN[_bin_index(m, cuts)] for m in margins],
+        linewidth=0.04,
+    )
+    _frame(ax, _bounds(geoms))
+    labels = [f"under {cuts[0]:,.0f}"] + [
+        f"{cuts[i]:,.0f}–{cuts[i + 1]:,.0f}" for i in range(len(cuts) - 1)
+    ] + [f"over {cuts[-1]:,.0f}"]
+    _sequential_legend(ax, SEQUENTIAL_CYAN, labels, "Winning margin (votes)")
+    fig.suptitle(f"How close each ward was — {year}", color=INK, fontsize=22, y=0.975)
+    fig.text(
+        0.5, 0.937,
+        f"Winner's lead over the runner-up, across {len(observed):,} contested wards",
+        ha="center", va="top", color=MUTED, fontsize=12.5,
+    )
+    fig.text(
+        0.5, 0.045,
+        "Classed at equal quantiles, not equal width: margins are heavily\n"
+        "skewed and equal-width bins would put almost every ward in one class.\n"
+        f"{len(margins) - len(observed):,} uncontested wards are drawn neutral —\n"
+        "no opponent stood, so there is no margin to report.",
+        ha="center", color=MUTED, fontsize=9.5, linespacing=1.6,
+    )
+    out = paths.maps / f"kerala_margin_{year}.png"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out, dpi=170, facecolor=SURFACE)
+    plt.close(fig)
+    return out
+
+
+def render_all(paths: Paths) -> list[Path]:
+    """Every figure, in the order a reader should meet them.
+
+    A figure whose inputs are missing is skipped rather than fatal -- a partial
+    dataset should still render what it can, and the ones that fail say why.
+    """
+    figures = (
+        ("ruling front", lambda: ruling_front_figure(paths)),
+        ("ward winners", lambda: ward_winner_figure(paths)),
+        ("women in unreserved seats", lambda: women_in_open_seats_figure(paths)),
+        ("community reservation", lambda: community_reservation_figure(paths)),
+        ("winning margin", lambda: margin_figure(paths)),
+        (
+            "ward shape check",
+            lambda: local_body_zoom_figure(
+                paths, ["C07003", "G07064"], label="Kochi Corporation + one GP"
+            ),
+        ),
+    )
+    written: list[Path] = []
+    for label, build in figures:
+        try:
+            written.append(build())
+        except (ValueError, KeyError, FileNotFoundError, OSError) as exc:
+            logging.getLogger(__name__).warning("skipped %s figure: %s", label, exc)
     return written

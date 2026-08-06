@@ -192,3 +192,93 @@ def test_render_survives_a_missing_zoom_target(tmp_path) -> None:
     )
     written = render_all(paths)
     assert not any(p.name == "ward_shape_check.png" for p in written)
+
+
+# --- classed (sequential) encodings -----------------------------------------
+
+
+def test_quantile_bins_split_the_observed_values_evenly():
+    from geo.build.maps import _bin_index, _quantile_bins
+
+    values = list(range(100))
+    cuts = _quantile_bins(values, 5)
+    assert len(cuts) == 4
+    counts = [0] * 5
+    for v in values:
+        counts[_bin_index(v, cuts)] += 1
+    assert max(counts) - min(counts) <= 1
+
+
+def test_quantile_bins_beat_equal_width_on_a_skewed_distribution():
+    """Margins are heavily skewed -- a long tail of huge ones over a dense low end.
+    Equal-width bins put almost every ward in the first class and render flat."""
+    from geo.build.maps import _bin_index, _quantile_bins
+
+    skewed = [int(1.6**i) for i in range(1, 40)] * 25
+    cuts = _quantile_bins(skewed, 5)
+    quantile_spread = len({_bin_index(v, cuts) for v in skewed})
+
+    lo, hi = min(skewed), max(skewed)
+    width = (hi - lo) / 5
+    equal_width = len({min(int((v - lo) / width), 4) for v in skewed})
+
+    assert quantile_spread == 5
+    assert quantile_spread > equal_width
+
+
+def test_a_mass_point_defeats_quantile_binning():
+    """Why the zero class exists.
+
+    Quantiles cannot separate a value that *is* a large share of the data: with
+    over a fifth of observations identical, several cuts land on the same number
+    and the legend degenerates -- it read "under 0%" and "0-0%" before the zero
+    class was split out of the ramp.
+    """
+    from geo.build.maps import _quantile_bins
+
+    zero_inflated = [0.0] * 900 + [i / 100 for i in range(1, 101)]
+    cuts = _quantile_bins(zero_inflated, 5)
+    assert len(set(cuts)) < len(cuts), "expected collapsed, indistinguishable cut points"
+
+
+def test_quantile_bins_survive_degenerate_input():
+    """A partial dataset must not crash the renderer with an IndexError."""
+    from geo.build.maps import _quantile_bins
+
+    assert _quantile_bins([], 5) == []
+    assert _quantile_bins([1, 2, 3], 1) == []
+
+
+def test_bin_index_is_inclusive_at_the_top():
+    from geo.build.maps import _bin_index
+
+    assert _bin_index(10_000, [1, 2, 3]) == 3
+    assert _bin_index(0, [1, 2, 3]) == 0
+
+
+def test_sequential_ramps_are_monotonically_darker():
+    """A sequential ramp must be one hue, light to dark. If lightness is not
+    monotonic the reader cannot order the classes by eye at all."""
+    from geo.build.maps import SEQUENTIAL_CYAN, SEQUENTIAL_VIOLET
+
+    def luminance(hex_colour: str) -> float:
+        raw = hex_colour.lstrip("#")
+        channels = [int(raw[i : i + 2], 16) / 255 for i in (0, 2, 4)]
+        linear = [c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4 for c in channels]
+        return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+
+    for ramp in (SEQUENTIAL_VIOLET, SEQUENTIAL_CYAN):
+        levels = [luminance(c) for c in ramp]
+        assert all(levels[i] > levels[i + 1] for i in range(len(levels) - 1)), ramp
+
+
+def test_community_reservation_reads_the_woman_variants_too():
+    """"SC Woman" is an SC-reserved ward. Matching only the exact string "SC"
+    would drop 921 of the 2,019 SC seats from the map."""
+    import re
+
+    from geo.build.maps import RESERVATION_COLOURS
+
+    assert set(RESERVATION_COLOURS) == {"SC", "ST"}
+    for text, expected in [("SC", "SC"), ("SC Woman", "SC"), ("ST", "ST"), ("ST Woman", "ST")]:
+        assert re.match(r"^(SC|ST)", text).group(1) == expected
