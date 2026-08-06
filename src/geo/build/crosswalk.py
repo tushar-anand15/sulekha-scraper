@@ -39,6 +39,7 @@ from typing import Final
 
 from data_merge.transform.matching import (
     LBKey,
+    has_latin,
     normalize,
     pair_local_bodies,
     wardnames_agree,
@@ -112,10 +113,28 @@ class Match:
         grounds that a comparison nobody could make did not succeed. Absence of
         evidence is not contradiction; only a side that *has* ward names can
         disagree about them.
+
+        A hand-written override is never re-litigated here. The gate exists to
+        catch a bad *automatic* pairing, and an override is a human having already
+        looked at this specific pair and decided -- stronger evidence than a
+        name-overlap heuristic, not weaker. Block Panchayat B10109
+        (``Areacode``/``Areekkode``) is the case that forced this: correctly paired
+        by hand, then rejected at 0.474 against a 0.5 threshold, so the override
+        silently achieved nothing. The score is still recorded on the match, so a
+        reviewer can see how thin the automatic evidence was.
         """
+        if self.method == "override":
+            return True
         if not self.theirs.ward_names:
             return True
-        if len(self.ours.ward_names) < MIN_SAMPLE_FOR_GATE:
+        # Same rule, one level deeper: names that exist but are written in
+        # Malayalam cannot be compared against transliterated ones, so a pairing
+        # with no *comparable* names on either side has no evidence either way.
+        # Block Panchayat B05049 (Pampady) is exactly this, and scoring it 0.0
+        # rejected a correct pairing.
+        if not comparable(self.ours.ward_names) or not comparable(self.theirs.ward_names):
+            return True
+        if len(comparable(self.ours.ward_names)) < MIN_SAMPLE_FOR_GATE:
             return True
         return self.ward_agreement >= MIN_WARD_AGREEMENT
 
@@ -153,26 +172,44 @@ class CrosswalkResult:
         return problems
 
 
+def comparable(names: Iterable[str]) -> list[str]:
+    """The names that a Latin-script comparison can actually say anything about.
+
+    ``normalize`` strips everything outside ``[A-Z0-9]``, so a name written in
+    Malayalam reduces to the empty string and disagrees with everything --
+    including its own correct counterpart. Some local bodies store their ward
+    names that way, and treating those as *failed* comparisons rather than
+    *impossible* ones rejects a correct pairing. ``matching.has_latin`` exists for
+    precisely this distinction.
+    """
+    return [n for n in names if n and has_latin(n)]
+
+
 def ward_agreement(ours: Sequence[str], theirs: Sequence[str]) -> float:
-    """Share of our ward names with an agreeing counterpart on the other side.
+    """Share of our comparable ward names with an agreeing counterpart.
 
     Greedy one-to-one: each of their names can be consumed once, so a local body
     that repeats a name cannot inflate the score by matching it repeatedly.
     Asymmetric on purpose -- the question is whether *our* wards are accounted
     for, and KSMART having extra wards is a delimitation difference, not evidence
     of a bad pairing.
+
+    The denominator counts only comparable names. Scoring an unreadable name as a
+    miss would punish a pairing for a comparison nobody could have made; see
+    :func:`comparable` and :meth:`Match.verified`.
     """
-    if not ours:
+    mine = comparable(ours)
+    if not mine:
         return 0.0
-    remaining = list(theirs)
+    remaining = comparable(theirs)
     agreed = 0
-    for name in ours:
+    for name in mine:
         for i, candidate in enumerate(remaining):
             if wardnames_agree(name, candidate):
                 agreed += 1
                 del remaining[i]
                 break
-    return agreed / len(ours)
+    return agreed / len(mine)
 
 
 class DistrictMismatch(RuntimeError):

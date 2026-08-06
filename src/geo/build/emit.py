@@ -218,12 +218,15 @@ def emit_local_body_layer(
 def emit_block_panchayat_layer(
     paths: Paths, result: JoinResult, *, fetched: str, built: str
 ) -> Path:
-    """Hook for the ``kerala_bp`` division layer.
+    """Write the 2025 ``kerala_bp`` division layer.
 
-    Not wired up in Unit 6 -- the plan scopes the BP/DP attribute join to whichever
-    unit builds their name-based crosswalk (they carry no ``lb_code``, see
-    ``geo.build.stitch.IDENTITY_FIELDS``). The writer itself is generic over any
-    ``JoinResult``, so once that join exists this is a one-line call, not new code.
+    Wired to ``geo.build.tier_crosswalk``, which builds the ``JoinResult`` this
+    takes: BP divisions carry no ``lb_code`` (see
+    ``geo.build.stitch.IDENTITY_FIELDS``), so getting one required a name-based
+    body-level crosswalk first (``tier_crosswalk.build_tier_body_crosswalk``) and
+    a ward-number join on top of it (``tier_crosswalk.join_division_layer``).
+    This function itself stays generic over any ``JoinResult``, unchanged from
+    before that join existed.
     """
     out_path = paths.final / LAYER_FILENAMES["kerala_bp"]
     provenance = ksmart_provenance(layer="kerala_bp", fetched=fetched, built=built)
@@ -234,8 +237,9 @@ def emit_block_panchayat_layer(
 def emit_district_panchayat_layer(
     paths: Paths, result: JoinResult, *, fetched: str, built: str
 ) -> Path:
-    """Hook for the ``kerala_dp`` division layer. See
-    :func:`emit_block_panchayat_layer` -- same reasoning, one tier up."""
+    """Write the 2025 ``kerala_dp`` division layer. See
+    :func:`emit_block_panchayat_layer` -- same reasoning and the same
+    ``geo.build.tier_crosswalk`` wiring, one tier up."""
     out_path = paths.final / LAYER_FILENAMES["kerala_dp"]
     provenance = ksmart_provenance(layer="kerala_dp", fetched=fetched, built=built)
     write_feature_collection(out_path, result, provenance)

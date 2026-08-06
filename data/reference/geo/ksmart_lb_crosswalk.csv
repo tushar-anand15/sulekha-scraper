@@ -1,0 +1,1034 @@
+lb_code,ksmart_lb_code,lb_type,district_name,lb_name,ksmart_name,match_method,ward_agreement,wards_ours,wards_ksmart
+C01001,C010100,Corporation,THIRUVANANTHAPURAM,Thiruvananthapuram,Thiruvananthapuram,exact,0.980,100,101
+C02002,C020100,Corporation,KOLLAM,Kollam,Kollam,exact,0.964,56,56
+C07003,C070100,Corporation,ERNAKULAM,Kochi,Kochi,exact,0.974,76,76
+C08004,C080100,Corporation,THRISSUR,Thrissur,Thrissur,exact,0.946,56,56
+C11005,C110100,Corporation,KOZHIKODE,Kozhikkode,Kozhikode,fuzzy,0.974,76,76
+C13006,C130100,Corporation,KANNUR,Kannur,Kannur,exact,0.964,56,56
+G01001,G011104,Grama Panchayat,THIRUVANANTHAPURAM,Parassala,Parassala,exact,1.000,24,24
+G01002,G011102,Grama Panchayat,THIRUVANANTHAPURAM,Karode,Karode,exact,1.000,20,20
+G01003,G011103,Grama Panchayat,THIRUVANANTHAPURAM,Kulathoor,Kulathoor,exact,1.000,21,21
+G01004,G011101,Grama Panchayat,THIRUVANANTHAPURAM,Chenkal,Chenkal,exact,1.000,22,22
+G01005,G011105,Grama Panchayat,THIRUVANANTHAPURAM,THIRUPURAM,Thirupuram,exact,1.000,15,15
+G01006,G011106,Grama Panchayat,THIRUVANANTHAPURAM,Poovar,Poovar,exact,1.000,15,15
+G01007,G010907,Grama Panchayat,THIRUVANANTHAPURAM,Vellarada,Vellarada,exact,0.958,24,24
+G01008,G010906,Grama Panchayat,THIRUVANANTHAPURAM,Kunnathukal,Kunnathukal,exact,0.957,23,23
+G01009,G010902,Grama Panchayat,THIRUVANANTHAPURAM,Kollayil,Kollayil,exact,1.000,18,18
+G01010,G010901,Grama Panchayat,THIRUVANANTHAPURAM,Perumkadavila,Perumkadavila,exact,1.000,17,17
+G01011,G010904,Grama Panchayat,THIRUVANANTHAPURAM,Aryankode,Aryancode,fuzzy,1.000,17,17
+G01012,G010903,Grama Panchayat,THIRUVANANTHAPURAM,Ottasekaramangalam,Ottasekharamangalam,fuzzy,1.000,15,15
+G01013,G010905,Grama Panchayat,THIRUVANANTHAPURAM,Kallikkadu,Kallikkadu,exact,0.929,14,14
+G01014,G010908,Grama Panchayat,THIRUVANANTHAPURAM,Amboori,Amboori,exact,1.000,14,14
+G01015,G011001,Grama Panchayat,THIRUVANANTHAPURAM,Athiyannoor,Athiyannoor,exact,1.000,18,18
+G01016,G011002,Grama Panchayat,THIRUVANANTHAPURAM,Kanjiramkulam,Kanjiramkulam,exact,1.000,15,15
+G01017,G011003,Grama Panchayat,THIRUVANANTHAPURAM,Karumkulam,Karumkulam,exact,1.000,19,19
+G01018,G011004,Grama Panchayat,THIRUVANANTHAPURAM,Kottukal,Kottukal,exact,1.000,21,21
+G01019,G011005,Grama Panchayat,THIRUVANANTHAPURAM,Venganoor,Venganoor,exact,0.955,22,22
+G01020,G010803,Grama Panchayat,THIRUVANANTHAPURAM,MARANALLUR,Maranalloor,fuzzy,1.000,22,22
+G01021,G010801,Grama Panchayat,THIRUVANANTHAPURAM,BALARAMAPURAM,Balaramapuram,exact,0.909,22,22
+G01022,G010802,Grama Panchayat,THIRUVANANTHAPURAM,PALLICHAL,Pallichal,exact,0.917,24,24
+G01023,G010804,Grama Panchayat,THIRUVANANTHAPURAM,MALAYINKEEZHU,Malayinkeezh,fuzzy,0.955,22,22
+G01024,G010805,Grama Panchayat,THIRUVANANTHAPURAM,VILAPPIL,Vilappil,exact,0.909,22,22
+G01025,G010806,Grama Panchayat,THIRUVANANTHAPURAM,VILAVOORKAL,Vilavoorkkal,fuzzy,0.950,20,20
+G01026,G010807,Grama Panchayat,THIRUVANANTHAPURAM,KALLIYOOR,Kalliyoor,exact,1.000,24,24
+G01027,G010701,Grama Panchayat,THIRUVANANTHAPURAM,ANDOORKONAM,Andoorkonam,exact,1.000,20,20
+G01028,G010702,Grama Panchayat,THIRUVANANTHAPURAM,KADINAMKULAM,Kadinamkulam,exact,1.000,24,24
+G01029,G010703,Grama Panchayat,THIRUVANANTHAPURAM,MANGALAPURAM,Mangalapuram,exact,1.000,22,22
+G01030,G010704,Grama Panchayat,THIRUVANANTHAPURAM,POTHENCODE,Pothencode,exact,1.000,19,19
+G01031,G010705,Grama Panchayat,THIRUVANANTHAPURAM,AZHOOR,Azhoor,exact,0.944,18,18
+G01032,G010508,Grama Panchayat,THIRUVANANTHAPURAM,Kattakada,Kattakkada,fuzzy,0.958,24,24
+G01033,G010503,Grama Panchayat,THIRUVANANTHAPURAM,Vellanad,Vellanad,exact,0.950,20,20
+G01034,G010502,Grama Panchayat,THIRUVANANTHAPURAM,Poovachal,Poovachal,exact,1.000,24,24
+G01035,G010501,Grama Panchayat,THIRUVANANTHAPURAM,Aryanad,Aryanad,exact,0.944,18,18
+G01036,G010504,Grama Panchayat,THIRUVANANTHAPURAM,Vithura,Vithura,exact,0.944,18,18
+G01037,G010506,Grama Panchayat,THIRUVANANTHAPURAM,Kuttichal,Kuttichal,exact,0.933,15,15
+G01038,G010505,Grama Panchayat,THIRUVANANTHAPURAM,Uzhamalakkal,Uzhamalakkal,exact,0.938,16,16
+G01039,G010507,Grama Panchayat,THIRUVANANTHAPURAM,Tholicode,Tholicode,exact,1.000,18,18
+G01040,G010604,Grama Panchayat,THIRUVANANTHAPURAM,Karakulam,Karakulam,exact,1.000,24,24
+G01041,G010602,Grama Panchayat,THIRUVANANTHAPURAM,Aruvikkara,Aruvikkara,exact,1.000,21,21
+G01042,G010605,Grama Panchayat,THIRUVANANTHAPURAM,Vembayam,Vembayam,exact,0.957,23,23
+G01043,G010601,Grama Panchayat,THIRUVANANTHAPURAM,Anadu,Anad,fuzzy,0.900,20,20
+G01044,G010603,Grama Panchayat,THIRUVANANTHAPURAM,Panavoor,Panavoor,exact,1.000,16,16
+G01045,G010404,Grama Panchayat,THIRUVANANTHAPURAM,Vamanapuram,Vamanapuram,exact,1.000,16,16
+G01046,G010408,Grama Panchayat,THIRUVANANTHAPURAM,Manickal,Manickal,exact,1.000,23,23
+G01047,G010402,Grama Panchayat,THIRUVANANTHAPURAM,Nellanad,Nellanad,exact,1.000,18,18
+G01048,G010403,Grama Panchayat,THIRUVANANTHAPURAM,Pullampara,Pullampara,exact,1.000,16,16
+G01049,G010406,Grama Panchayat,THIRUVANANTHAPURAM,Nanniyode,Nanniyode,exact,1.000,18,18
+G01050,G010407,Grama Panchayat,THIRUVANANTHAPURAM,Peringammala,Peringammala,exact,0.947,19,19
+G01051,G010401,Grama Panchayat,THIRUVANANTHAPURAM,Kallara,Kallara,exact,1.000,18,18
+G01052,G010405,Grama Panchayat,THIRUVANANTHAPURAM,Pangode,Pangode,exact,0.947,19,19
+G01053,G010208,Grama Panchayat,THIRUVANANTHAPURAM,Pulimath,Pulimath,exact,1.000,20,20
+G01054,G010203,Grama Panchayat,THIRUVANANTHAPURAM,Karavaram,Karavaram,exact,0.950,20,20
+G01055,G010206,Grama Panchayat,THIRUVANANTHAPURAM,Nagaroor,Nagaroor,exact,1.000,18,18
+G01056,G010202,Grama Panchayat,THIRUVANANTHAPURAM,Pazhayakunnummel,Pazhayakunnummel,exact,1.000,17,17
+G01057,G010201,Grama Panchayat,THIRUVANANTHAPURAM,Kilimanoor,Kilimanoor,exact,1.000,16,16
+G01058,G010207,Grama Panchayat,THIRUVANANTHAPURAM,Navayikulam,Navaikulam,fuzzy,1.000,24,24
+G01059,G010204,Grama Panchayat,THIRUVANANTHAPURAM,Madavoor,Madavoor,exact,1.000,16,16
+G01060,G010205,Grama Panchayat,THIRUVANANTHAPURAM,Pallikkal,Pallickal,fuzzy,1.000,14,14
+G01061,G010301,Grama Panchayat,THIRUVANANTHAPURAM,Anchuthengu,Anjuthengu,fuzzy,1.000,14,14
+G01062,G010302,Grama Panchayat,THIRUVANANTHAPURAM,Vakkom,Vakkom,exact,1.000,14,14
+G01063,G010303,Grama Panchayat,THIRUVANANTHAPURAM,Chirayinkeezhu,Chirayinkeezhu,exact,1.000,19,19
+G01064,G010304,Grama Panchayat,THIRUVANANTHAPURAM,Kizhuvilam,Kizhuvilam,exact,0.952,21,21
+G01065,G010305,Grama Panchayat,THIRUVANANTHAPURAM,Mudakkal,Mudakkal,exact,1.000,22,22
+G01066,G010306,Grama Panchayat,THIRUVANANTHAPURAM,Kadakkavoor,Kadakkavoor,exact,1.000,17,17
+G01067,G010107,Grama Panchayat,THIRUVANANTHAPURAM,Vettoor,Vettoor,exact,0.933,15,15
+G01068,G010106,Grama Panchayat,THIRUVANANTHAPURAM,Cherunniyoor,Cherunniyoor,exact,0.800,15,15
+G01069,G010102,Grama Panchayat,THIRUVANANTHAPURAM,Edava,Edava,exact,1.000,18,18
+G01070,G010103,Grama Panchayat,THIRUVANANTHAPURAM,Elakamon,Elakamon,exact,1.000,18,18
+G01071,G010101,Grama Panchayat,THIRUVANANTHAPURAM,Chemmaruthy,Chemmaruthy,exact,1.000,20,20
+G01072,G010104,Grama Panchayat,THIRUVANANTHAPURAM,MANAMBOOR,Manamboor,exact,1.000,17,17
+G01073,G010105,Grama Panchayat,THIRUVANANTHAPURAM,Ottoor,Ottoor,exact,1.000,14,14
+G02001,G020101,Grama Panchayat,KOLLAM,Oachira,Oachira,exact,0.947,19,19
+G02002,G020102,Grama Panchayat,KOLLAM,Kulasekharapuram,Kulasekharapuram,exact,1.000,24,24
+G02003,G020104,Grama Panchayat,KOLLAM,Thazhava,Thazhava,exact,0.958,24,24
+G02004,G020103,Grama Panchayat,KOLLAM,Clappana,Clappana,exact,1.000,16,16
+G02005,G020105,Grama Panchayat,KOLLAM,Alappad,Alappad,exact,1.000,16,16
+G02006,G020106,Grama Panchayat,KOLLAM,Thodiyoor,Thodiyoor,exact,1.000,24,24
+G02007,G020201,Grama Panchayat,KOLLAM,Sasthamcotta,Sasthamcotta,exact,1.000,21,21
+G02008,G020202,Grama Panchayat,KOLLAM,West Kallada,West Kallada,exact,0.933,15,15
+G02009,G020203,Grama Panchayat,KOLLAM,Sooranad South,Sooranad South,exact,1.000,17,17
+G02010,G020204,Grama Panchayat,KOLLAM,Poruvazhi,Poruvazhy,fuzzy,1.000,19,19
+G02011,G020205,Grama Panchayat,KOLLAM,Kunnathur,Kunnathur,exact,1.000,18,18
+G02012,G020206,Grama Panchayat,KOLLAM,Sooranad North,Sooranad North,exact,0.947,19,19
+G02013,G020207,Grama Panchayat,KOLLAM,Mynagappally,Mynagappally,exact,0.750,24,24
+G02014,G020301,Grama Panchayat,KOLLAM,Ummannoor,Ummannur,fuzzy,0.952,21,21
+G02015,G020302,Grama Panchayat,KOLLAM,Vettikavala,Vettikkavala,fuzzy,1.000,22,22
+G02016,G020303,Grama Panchayat,KOLLAM,Melila,Melila,exact,1.000,16,16
+G02017,G020304,Grama Panchayat,KOLLAM,Mylom,Mylam,fuzzy,1.000,21,21
+G02018,G020305,Grama Panchayat,KOLLAM,Kulakkada,Kulakkada,exact,0.950,20,20
+G02019,G020306,Grama Panchayat,KOLLAM,Pavithreswaram,Pavithreswaram,exact,1.000,20,20
+G02020,G020401,Grama Panchayat,KOLLAM,Vilakkudy,Vilakudy,fuzzy,1.000,21,21
+G02021,G020402,Grama Panchayat,KOLLAM,Thalavoor,Thalavoor,exact,1.000,21,21
+G02022,G020403,Grama Panchayat,KOLLAM,Piravanthur,Piravanthur,exact,0.905,21,21
+G02023,G020404,Grama Panchayat,KOLLAM,Pattazhi Vadakkekara,Pattazhi Vadakkekara,exact,1.000,14,14
+G02024,G020405,Grama Panchayat,KOLLAM,Pattazhi,Pattazhi,exact,1.000,15,15
+G02025,G020406,Grama Panchayat,KOLLAM,Pathanapuram,Pathanapuram,exact,0.950,20,20
+G02026,G020501,Grama Panchayat,KOLLAM,Kulathupuzha,Kulathupuzha,exact,0.952,21,21
+G02027,G020502,Grama Panchayat,KOLLAM,Yeroor,Yeroor,exact,1.000,21,21
+G02028,G020503,Grama Panchayat,KOLLAM,Alayaman,Alayamon,fuzzy,1.000,16,16
+G02029,G020504,Grama Panchayat,KOLLAM,Anchal,Anchal,exact,1.000,21,21
+G02030,G020505,Grama Panchayat,KOLLAM,Edamulakkal,Edamulakkal,exact,0.913,23,23
+G02031,G020506,Grama Panchayat,KOLLAM,Karavaloor,Karavaloor,exact,1.000,17,17
+G02032,G020507,Grama Panchayat,KOLLAM,Thenmala,Thenmala,exact,1.000,17,17
+G02033,G020508,Grama Panchayat,KOLLAM,Aryankavu,Ariencavu,override,0.929,14,14
+G02034,G020601,Grama Panchayat,KOLLAM,Veliyam,Veliyam,exact,0.950,20,20
+G02035,G020602,Grama Panchayat,KOLLAM,Pooyappally,Pooyappally,exact,0.882,17,17
+G02036,G020603,Grama Panchayat,KOLLAM,Kareepra,Kareepra,exact,0.895,19,19
+G02037,G020604,Grama Panchayat,KOLLAM,Ezhukone,Ezhukone,exact,0.824,17,17
+G02038,G020605,Grama Panchayat,KOLLAM,Neduvathur,Neduvathur,exact,0.947,19,19
+G02041,G020708,Grama Panchayat,KOLLAM,Thrikkaruva,Thrikkaruva,exact,1.000,18,18
+G02042,G020706,Grama Panchayat,KOLLAM,Panayam,Panayam,exact,1.000,18,18
+G02043,G020701,Grama Panchayat,KOLLAM,Perinad,Perinad,exact,1.000,21,21
+G02044,G020702,Grama Panchayat,KOLLAM,Kundara,Kundara,exact,0.929,14,14
+G02045,G020704,Grama Panchayat,KOLLAM,Perayam,Perayam,exact,1.000,16,16
+G02046,G020703,Grama Panchayat,KOLLAM,East Kallada,Kizhakkekallada,override,0.812,16,16
+G02047,G020705,Grama Panchayat,KOLLAM,Mandrothuruthu,Muntrothuruthu,fuzzy,1.000,14,14
+G02048,G020801,Grama Panchayat,KOLLAM,Thekkumbhagam,Thekkumbhagom,fuzzy,1.000,14,14
+G02049,G020802,Grama Panchayat,KOLLAM,Chavara,Chavara,exact,0.917,24,24
+G02050,G020803,Grama Panchayat,KOLLAM,Thevalakkara,Thevalakkara,exact,0.958,24,24
+G02051,G020804,Grama Panchayat,KOLLAM,Panmana,Panmana,exact,0.958,24,24
+G02052,G020805,Grama Panchayat,KOLLAM,Neendakara,Neendakara,exact,1.000,14,14
+G02053,G020901,Grama Panchayat,KOLLAM,Mayyanad,Mayyanad,exact,1.000,24,24
+G02054,G020904,Grama Panchayat,KOLLAM,Elampalloor,Elampalloor,exact,1.000,23,23
+G02055,G020902,Grama Panchayat,KOLLAM,Thrikkovilvattom,Thrikkovilvattom,exact,0.917,24,24
+G02056,G020903,Grama Panchayat,KOLLAM,Kottamkara,Kottamkara,exact,1.000,23,23
+G02057,G020905,Grama Panchayat,KOLLAM,Nedumpana,Nedumpana,exact,1.000,24,24
+G02058,G021101,Grama Panchayat,KOLLAM,Chithara,Chithara,exact,1.000,24,24
+G02059,G021102,Grama Panchayat,KOLLAM,Kadakkal,Kadakkal,exact,1.000,20,20
+G02060,G021103,Grama Panchayat,KOLLAM,Chadayamangalam,Chadayamangalam,exact,1.000,16,16
+G02061,G021104,Grama Panchayat,KOLLAM,Ittiva,Ittiva,exact,1.000,22,22
+G02062,G021105,Grama Panchayat,KOLLAM,Velinalloor,Velinallur,fuzzy,1.000,19,19
+G02063,G021106,Grama Panchayat,KOLLAM,Elamadu,Elamadu,exact,0.944,18,18
+G02064,G021107,Grama Panchayat,KOLLAM,Nilamel,Nilamel,exact,1.000,14,14
+G02065,G021108,Grama Panchayat,KOLLAM,Kummil,Kummil,exact,1.000,16,16
+G02066,G021001,Grama Panchayat,KOLLAM,Poothakkulam,Poothakkulam,exact,1.000,19,19
+G02067,G021002,Grama Panchayat,KOLLAM,Kalluvathukkal,Kalluvathukkal,exact,0.958,24,24
+G02068,G021003,Grama Panchayat,KOLLAM,Chathannur,Chathannur,exact,1.000,19,19
+G02069,G021004,Grama Panchayat,KOLLAM,Adichanalloor,Adichanalloor,exact,0.952,21,21
+G02070,G021005,Grama Panchayat,KOLLAM,Chirakkara,Chirakkara,exact,0.824,17,17
+G03001,G030101,Grama Panchayat,PATHANAMTHITTA,Anikkadu,Anicadu,fuzzy,0.929,14,14
+G03002,G030102,Grama Panchayat,PATHANAMTHITTA,Kaviyoor,Kaviyoor,exact,1.000,14,14
+G03003,G030103,Grama Panchayat,PATHANAMTHITTA,Kottanad,Kottanadu,fuzzy,1.000,14,14
+G03004,G030105,Grama Panchayat,PATHANAMTHITTA,Kallooppara,Kallooppara,exact,1.000,14,14
+G03005,G030104,Grama Panchayat,PATHANAMTHITTA,Kottangal,Kottangal,exact,0.929,14,14
+G03006,G030106,Grama Panchayat,PATHANAMTHITTA,Kunnanthanam,Kunnathanam,fuzzy,1.000,16,16
+G03007,G030107,Grama Panchayat,PATHANAMTHITTA,Mallappally,Mallappally,exact,1.000,15,15
+G03008,G030201,Grama Panchayat,PATHANAMTHITTA,Kadapra,Kadapra,exact,0.938,16,16
+G03009,G030202,Grama Panchayat,PATHANAMTHITTA,Kuttoor,Kuttoor,exact,0.867,15,15
+G03010,G030203,Grama Panchayat,PATHANAMTHITTA,Niranam,Niranam,exact,1.000,14,14
+G03011,G030204,Grama Panchayat,PATHANAMTHITTA,Nedumpram,Nedumpuram,fuzzy,1.000,14,14
+G03012,G030205,Grama Panchayat,PATHANAMTHITTA,Peringara,Peringara,exact,0.812,16,16
+G03013,G030301,Grama Panchayat,PATHANAMTHITTA,Ayiroor,Ayiroor,exact,1.000,16,16
+G03014,G030302,Grama Panchayat,PATHANAMTHITTA,Eraviperoor,Eraviperoor,exact,0.889,18,18
+G03015,G030303,Grama Panchayat,PATHANAMTHITTA,Koipram,Koipuram,fuzzy,1.000,18,18
+G03016,G030304,Grama Panchayat,PATHANAMTHITTA,Thottappuzhassery,Thottapuzhassery,fuzzy,1.000,14,14
+G03017,G030305,Grama Panchayat,PATHANAMTHITTA,Ezhumattoor,Ezhumattoor,exact,1.000,15,15
+G03018,G030306,Grama Panchayat,PATHANAMTHITTA,Puramattam,Puramattom,fuzzy,1.000,14,14
+G03019,G030401,Grama Panchayat,PATHANAMTHITTA,Omalloor,Omallur,fuzzy,1.000,15,15
+G03020,G030402,Grama Panchayat,PATHANAMTHITTA,Chenneerkara,Chenneerkara,exact,0.933,15,15
+G03021,G030403,Grama Panchayat,PATHANAMTHITTA,Elanthoor,Elanthoor,exact,0.929,14,14
+G03022,G030404,Grama Panchayat,PATHANAMTHITTA,Cherukol,Cherukole,fuzzy,1.000,14,14
+G03023,G030405,Grama Panchayat,PATHANAMTHITTA,Kozhanchery,Kozhencherry,fuzzy,0.929,14,14
+G03024,G030406,Grama Panchayat,PATHANAMTHITTA,Mallappuzhassery,Mallapuzhassery,fuzzy,0.571,14,14
+G03025,G030407,Grama Panchayat,PATHANAMTHITTA,Naranganam,Naranganam,exact,0.857,14,14
+G03026,G030501,Grama Panchayat,PATHANAMTHITTA,Ranni Pazhavangady,Ranni Pazhavangadi,fuzzy,1.000,17,17
+G03027,G030502,Grama Panchayat,PATHANAMTHITTA,Ranni,Ranni,exact,0.857,14,14
+G03028,G030503,Grama Panchayat,PATHANAMTHITTA,Ranny Angady,Ranni Angadi,fuzzy,1.000,14,14
+G03029,G030504,Grama Panchayat,PATHANAMTHITTA,Ranny Perunadu,Ranni Perunad,fuzzy,0.938,16,16
+G03030,G030505,Grama Panchayat,PATHANAMTHITTA,Vadasserikkara,Vadasserikkara,exact,0.875,16,16
+G03031,G030506,Grama Panchayat,PATHANAMTHITTA,Chittar,Chittar,exact,1.000,14,14
+G03032,G030507,Grama Panchayat,PATHANAMTHITTA,Seethathodu,Seethathodu,exact,1.000,14,14
+G03033,G030508,Grama Panchayat,PATHANAMTHITTA,Naranammoozhy,Naranammoozhy,exact,0.857,14,14
+G03034,G030509,Grama Panchayat,PATHANAMTHITTA,Vechoochira,Vechuchira,fuzzy,1.000,16,16
+G03035,G030601,Grama Panchayat,PATHANAMTHITTA,Konni,Konni,exact,1.000,20,20
+G03036,G030602,Grama Panchayat,PATHANAMTHITTA,Aruvappulam,Aruvapulam,fuzzy,0.933,15,15
+G03037,G030603,Grama Panchayat,PATHANAMTHITTA,Pramadam,Pramadom,fuzzy,0.950,20,20
+G03038,G030604,Grama Panchayat,PATHANAMTHITTA,Mylapra,Mylapra,exact,1.000,14,14
+G03039,G030605,Grama Panchayat,PATHANAMTHITTA,Vallikkodu,Vallicode,fuzzy,1.000,16,16
+G03040,G030606,Grama Panchayat,PATHANAMTHITTA,Thannithodu,Thannithodu,exact,1.000,14,14
+G03041,G030607,Grama Panchayat,PATHANAMTHITTA,Malayalapuzha,Malayalapuzha,exact,1.000,14,14
+G03042,G030701,Grama Panchayat,PATHANAMTHITTA,Panthalam-Thekkekkara,Pandalam Thekkekara,fuzzy,1.000,15,15
+G03044,G030702,Grama Panchayat,PATHANAMTHITTA,Thumpamon,Thumpamon,exact,1.000,14,14
+G03045,G030706,Grama Panchayat,PATHANAMTHITTA,Kulanada,Kulanada,exact,1.000,17,17
+G03046,G030704,Grama Panchayat,PATHANAMTHITTA,Aranmula,Aranmula,exact,0.947,19,19
+G03047,G030705,Grama Panchayat,PATHANAMTHITTA,Mezhuvely,Mezhuveli,fuzzy,1.000,14,14
+G03048,G030801,Grama Panchayat,PATHANAMTHITTA,Enadimangalam,Enadimangalam,exact,1.000,16,16
+G03049,G030802,Grama Panchayat,PATHANAMTHITTA,Earathu,Erathu,fuzzy,1.000,17,17
+G03050,G030803,Grama Panchayat,PATHANAMTHITTA,Ezhamkulam,Ezhamkulam,exact,1.000,21,21
+G03051,G030804,Grama Panchayat,PATHANAMTHITTA,Kadambanad,Kadampanadu,fuzzy,1.000,18,18
+G03052,G030805,Grama Panchayat,PATHANAMTHITTA,Kalanjoor,Kalanjoor,exact,0.900,20,20
+G03053,G030806,Grama Panchayat,PATHANAMTHITTA,Kodumon,Kodumon,exact,0.737,19,19
+G03054,G030807,Grama Panchayat,PATHANAMTHITTA,Pallickal,Pallickal,exact,1.000,24,24
+G04001,G040101,Grama Panchayat,ALAPPUZHA,Arookutty,Arookutty,exact,1.000,15,15
+G04002,G040102,Grama Panchayat,ALAPPUZHA,Chennam Pallippuram,Chennampallippuram,exact,0.789,19,19
+G04003,G040103,Grama Panchayat,ALAPPUZHA,Panavally,Panavally,exact,1.000,20,20
+G04004,G040104,Grama Panchayat,ALAPPUZHA,Perumbalam,Perumbalam,exact,1.000,14,14
+G04005,G040105,Grama Panchayat,ALAPPUZHA,Thycattussery,Thaicattussery,fuzzy,0.875,16,16
+G04006,G040207,Grama Panchayat,ALAPPUZHA,Aroor,Aroor,exact,1.000,24,24
+G04007,G040206,Grama Panchayat,ALAPPUZHA,Ezhupunna,Ezhupunna,exact,1.000,16,16
+G04008,G040204,Grama Panchayat,ALAPPUZHA,Kuthiathode,Kuthiathodu,fuzzy,0.941,17,17
+G04009,G040205,Grama Panchayat,ALAPPUZHA,Kodamthuruth,Kodamthuruthu,fuzzy,1.000,18,18
+G04010,G040203,Grama Panchayat,ALAPPUZHA,Thuravoor,Thuravoor,exact,0.895,19,19
+G04011,G040202,Grama Panchayat,ALAPPUZHA,Pattanakkad,Pattanakkad,exact,1.000,21,21
+G04012,G040201,Grama Panchayat,ALAPPUZHA,Vayalar,Vayalar,exact,1.000,17,17
+G04013,G040302,Grama Panchayat,ALAPPUZHA,Kanjikkuzhy,Kanjikuzhi,fuzzy,0.947,19,19
+G04014,G040304,Grama Panchayat,ALAPPUZHA,Cherthala South,Cherthala South,exact,1.000,24,24
+G04015,G040301,Grama Panchayat,ALAPPUZHA,Mararikkulam North,Mararikulam North,fuzzy,0.900,20,20
+G04016,G040305,Grama Panchayat,ALAPPUZHA,Kadakkarapally,Kadakkarappally,fuzzy,0.857,14,14
+G04017,G040303,Grama Panchayat,ALAPPUZHA,Thanneermukkam,Thanneermukkam,exact,0.958,24,24
+G04018,G040401,Grama Panchayat,ALAPPUZHA,Aryad,Aryad,exact,0.950,20,20
+G04019,G040402,Grama Panchayat,ALAPPUZHA,Mannanchery,Mannanchery,exact,0.958,24,24
+G04020,G040403,Grama Panchayat,ALAPPUZHA,Mararikkulam South,Mararikulam South,fuzzy,1.000,24,24
+G04021,G040404,Grama Panchayat,ALAPPUZHA,Muhamma,Muhamma,exact,1.000,18,18
+G04022,G040502,Grama Panchayat,ALAPPUZHA,Ambalappuzha South,Ambalapuzha South,fuzzy,0.941,17,17
+G04023,G040503,Grama Panchayat,ALAPPUZHA,Ambalappuzha North,Ambalapuzha North,fuzzy,1.000,20,20
+G04024,G040504,Grama Panchayat,ALAPPUZHA,Punnapra South,Punnapra South,exact,0.895,19,19
+G04025,G040505,Grama Panchayat,ALAPPUZHA,Punnapra North,Punnapra North,exact,1.000,19,19
+G04026,G040501,Grama Panchayat,ALAPPUZHA,Purakkad,Purakkad,exact,0.947,19,19
+G04027,G040602,Grama Panchayat,ALAPPUZHA,Edathua,Edathua,exact,0.933,15,15
+G04028,G040606,Grama Panchayat,ALAPPUZHA,Kainakary,Kainakary,exact,0.933,15,15
+G04029,G040605,Grama Panchayat,ALAPPUZHA,Champakkulam,Champakulam,fuzzy,0.929,14,14
+G04030,G040603,Grama Panchayat,ALAPPUZHA,Thakazhy,Thakazhi,fuzzy,1.000,15,15
+G04031,G040601,Grama Panchayat,ALAPPUZHA,Thalavady,Thalavadi,fuzzy,1.000,16,16
+G04032,G040604,Grama Panchayat,ALAPPUZHA,Nedumudi,Nedumudi,exact,0.933,15,15
+G04033,G040704,Grama Panchayat,ALAPPUZHA,Kavalam,Kavalam,exact,0.786,14,14
+G04034,G040705,Grama Panchayat,ALAPPUZHA,Pulincunnu,Pulinkunnu,fuzzy,0.875,16,16
+G04035,G040703,Grama Panchayat,ALAPPUZHA,Neelamperoor,Neelamperoor,exact,0.929,14,14
+G04036,G040701,Grama Panchayat,ALAPPUZHA,Muttar,Muttar,exact,1.000,14,14
+G04037,G040706,Grama Panchayat,ALAPPUZHA,Ramankary,Ramankari,fuzzy,0.929,14,14
+G04038,G040702,Grama Panchayat,ALAPPUZHA,Veliyanad,Veliyanad,exact,0.929,14,14
+G04039,G040803,Grama Panchayat,ALAPPUZHA,Cheriyanad,Cheriyanad,exact,1.000,16,16
+G04040,G040804,Grama Panchayat,ALAPPUZHA,Ala,Ala,exact,1.000,14,14
+G04041,G040805,Grama Panchayat,ALAPPUZHA,Puliyur,Puliyoor,fuzzy,0.929,14,14
+G04042,G040806,Grama Panchayat,ALAPPUZHA,Budhannur,Budhanur,fuzzy,1.000,15,15
+G04043,G040807,Grama Panchayat,ALAPPUZHA,Pandanad,Pandanad,exact,0.929,14,14
+G04044,G040808,Grama Panchayat,ALAPPUZHA,Thiruvanvandoor,Thiruvanvandur,fuzzy,1.000,14,14
+G04045,G040801,Grama Panchayat,ALAPPUZHA,Mulakkuzha,Mulakuzha,fuzzy,0.947,19,19
+G04046,G040802,Grama Panchayat,ALAPPUZHA,Venmony,Venmony,exact,0.933,15,15
+G04047,G040901,Grama Panchayat,ALAPPUZHA,Karthikapally,Karthikappally,fuzzy,0.786,14,14
+G04048,G040902,Grama Panchayat,ALAPPUZHA,Thrikkunnappuzha,Thrikkunnapuzha,fuzzy,1.000,18,18
+G04049,G040903,Grama Panchayat,ALAPPUZHA,Kumarapuram,Kumarapuram,exact,1.000,16,16
+G04050,G040904,Grama Panchayat,ALAPPUZHA,Karuvatta,Karuvatta,exact,1.000,16,16
+G04052,G040906,Grama Panchayat,ALAPPUZHA,Pallippad,Pallippad,exact,0.857,14,14
+G04053,G040907,Grama Panchayat,ALAPPUZHA,Cheruthana,Cheruthana,exact,1.000,14,14
+G04054,G040908,Grama Panchayat,ALAPPUZHA,Veeyapuram,Veeyapuram,exact,1.000,14,14
+G04055,G041001,Grama Panchayat,ALAPPUZHA,Mavelikkara Thekkekkara,Mavelikkara Thekkekara,fuzzy,1.000,20,20
+G04056,G041002,Grama Panchayat,ALAPPUZHA,Chettikulangara,Chettikulangara,exact,1.000,22,22
+G04057,G041003,Grama Panchayat,ALAPPUZHA,Chennithala Thripperuthura,Chennithala Thriperumthura,fuzzy,1.000,19,19
+G04058,G041004,Grama Panchayat,ALAPPUZHA,Thazhakkara,Thazhakara,fuzzy,1.000,22,22
+G04059,G041005,Grama Panchayat,ALAPPUZHA,Mannar,Mannar,exact,1.000,19,19
+G04060,G041105,Grama Panchayat,ALAPPUZHA,Chunakkara,Chunakkara,exact,0.941,17,17
+G04061,G041101,Grama Panchayat,ALAPPUZHA,Nooranad,Nooranad,exact,1.000,18,18
+G04062,G041106,Grama Panchayat,ALAPPUZHA,Palamel,Palamel,exact,0.952,21,21
+G04063,G041103,Grama Panchayat,ALAPPUZHA,Bharanikkavu,Bharanikavu,fuzzy,1.000,22,22
+G04064,G041104,Grama Panchayat,ALAPPUZHA,Mavelikkara -Thamarakkulam,Mavelikara Thamarakulam,fuzzy,1.000,18,18
+G04065,G041102,Grama Panchayat,ALAPPUZHA,Vallikunnam,Vallikunnam,exact,0.900,20,20
+G04066,G041201,Grama Panchayat,ALAPPUZHA,Pathiyoor,Pathiyoor,exact,0.714,21,21
+G04067,G041202,Grama Panchayat,ALAPPUZHA,Kandalloor,Kandalloor,exact,1.000,15,15
+G04068,G041203,Grama Panchayat,ALAPPUZHA,Cheppad,Cheppad,exact,1.000,16,16
+G04069,G041204,Grama Panchayat,ALAPPUZHA,Muthukulam,Muthukulam,exact,0.938,16,16
+G04070,G041205,Grama Panchayat,ALAPPUZHA,Aarattupuzha,Arattupuzha,fuzzy,1.000,19,19
+G04071,G041206,Grama Panchayat,ALAPPUZHA,Krishnapuram,Krishnapuram,exact,1.000,18,18
+G04072,G041207,Grama Panchayat,ALAPPUZHA,Devikulangara,Devikulangara,exact,1.000,16,16
+G04073,G041208,Grama Panchayat,ALAPPUZHA,Chingoli,Chingoli,exact,1.000,14,14
+G05001,G050101,Grama Panchayat,KOTTAYAM,Thalayazham,Thalayazham,exact,1.000,16,16
+G05002,G050102,Grama Panchayat,KOTTAYAM,Chempu,Chempu,exact,1.000,16,16
+G05003,G050103,Grama Panchayat,KOTTAYAM,Maravanthuruthu,Maravanthuruthu,exact,1.000,16,16
+G05004,G050104,Grama Panchayat,KOTTAYAM,T V Puram,TV Puram,exact,1.000,15,15
+G05005,G050105,Grama Panchayat,KOTTAYAM,Vechoor,Vechoor,exact,1.000,14,14
+G05006,G050106,Grama Panchayat,KOTTAYAM,Udayanapuram,Udayanapuram,exact,1.000,18,18
+G05007,G050201,Grama Panchayat,KOTTAYAM,Kaduthuruthy,Kaduthuruthy,exact,0.950,20,20
+G05008,G050202,Grama Panchayat,KOTTAYAM,Kallara,Kallara,exact,0.929,14,14
+G05009,G050203,Grama Panchayat,KOTTAYAM,Mulakkulam,Mulakulam,fuzzy,0.889,18,18
+G05010,G050204,Grama Panchayat,KOTTAYAM,Njeezhoor,Njeezhoor,exact,1.000,15,15
+G05011,G050205,Grama Panchayat,KOTTAYAM,Thalayolaparambu,Thalayolaparambu,exact,0.941,17,17
+G05012,G050206,Grama Panchayat,KOTTAYAM,Velloor,Velloor,exact,1.000,17,17
+G05013,G050305,Grama Panchayat,KOTTAYAM,Neendoor,Neendoor,exact,1.000,15,15
+G05014,G050306,Grama Panchayat,KOTTAYAM,Kumarakom,Kumarakom,exact,1.000,16,16
+G05015,G050307,Grama Panchayat,KOTTAYAM,Thiruvarppu,Thiruvarpu,fuzzy,1.000,19,19
+G05016,G050304,Grama Panchayat,KOTTAYAM,Arpookkara,Arpookara,fuzzy,0.941,17,17
+G05017,G050303,Grama Panchayat,KOTTAYAM,Athirampuzha,Athirampuzha,exact,0.958,24,24
+G05019,G050302,Grama Panchayat,KOTTAYAM,Aymanam,Aimanam,fuzzy,0.952,21,21
+G05020,G050401,Grama Panchayat,KOTTAYAM,Kadaplamattom,Kadaplamattom,exact,1.000,14,14
+G05021,G050402,Grama Panchayat,KOTTAYAM,Marangattupally,Marangattupally,exact,1.000,15,15
+G05022,G050403,Grama Panchayat,KOTTAYAM,Kanakkary,Kanakkari,fuzzy,1.000,17,17
+G05023,G050404,Grama Panchayat,KOTTAYAM,Veliyannoor,Veliyannoor,exact,1.000,14,14
+G05024,G050405,Grama Panchayat,KOTTAYAM,Kuravilangadu,Kuravilangad,fuzzy,1.000,15,15
+G05025,G050406,Grama Panchayat,KOTTAYAM,Uzhavoor,Uzhavoor,exact,0.929,14,14
+G05026,G050407,Grama Panchayat,KOTTAYAM,Ramapuram,Ramapuram,exact,1.000,19,19
+G05027,G050408,Grama Panchayat,KOTTAYAM,Manjoor,Manjoor,exact,0.947,19,19
+G05028,G050501,Grama Panchayat,KOTTAYAM,Bharananganam,Bharananganam,exact,1.000,14,14
+G05029,G050502,Grama Panchayat,KOTTAYAM,Karoor,Karoor,exact,1.000,17,17
+G05030,G050503,Grama Panchayat,KOTTAYAM,Kozhuvanal,Kozhuvanal,exact,0.929,14,14
+G05031,G050504,Grama Panchayat,KOTTAYAM,Kadanadu,Kadanad,fuzzy,0.933,15,15
+G05032,G050505,Grama Panchayat,KOTTAYAM,Meenachil,Meenachil,exact,1.000,14,14
+G05033,G050506,Grama Panchayat,KOTTAYAM,Mutholy,Mutholy,exact,1.000,14,14
+G05034,G050601,Grama Panchayat,KOTTAYAM,Melukavu,Melukavu,exact,1.000,14,14
+G05035,G050602,Grama Panchayat,KOTTAYAM,Moonnilavu,Moonilavu,fuzzy,0.929,14,14
+G05036,G050603,Grama Panchayat,KOTTAYAM,Poonjar,Poonjar,exact,1.000,14,14
+G05037,G050605,Grama Panchayat,KOTTAYAM,Poonjar Thekkekkara,Poonjar Thekkekara,fuzzy,1.000,15,15
+G05039,G050607,Grama Panchayat,KOTTAYAM,Teekoy,Teekoy,exact,1.000,14,14
+G05040,G050608,Grama Panchayat,KOTTAYAM,Thalanadu,Thalanad,fuzzy,1.000,14,14
+G05041,G050606,Grama Panchayat,KOTTAYAM,Thalappalam,Thalappalam,exact,1.000,14,14
+G05042,G050609,Grama Panchayat,KOTTAYAM,Thidanadu,Thidanad,fuzzy,1.000,16,16
+G05043,G050701,Grama Panchayat,KOTTAYAM,Akalakkunnam,Akalakunnam,fuzzy,0.933,15,15
+G05044,G050702,Grama Panchayat,KOTTAYAM,Elikkulam,Elikulam,fuzzy,0.941,17,17
+G05045,G050703,Grama Panchayat,KOTTAYAM,Kooroppada,Kooroppada,exact,0.947,19,19
+G05046,G050704,Grama Panchayat,KOTTAYAM,Pampady,Pampady,exact,0.952,21,21
+G05047,G050705,Grama Panchayat,KOTTAYAM,Pallickathodu,Pallikkathode,fuzzy,1.000,15,15
+G05048,G050708,Grama Panchayat,KOTTAYAM,Manarcadu,Manarcad,fuzzy,1.000,19,19
+G05049,G050707,Grama Panchayat,KOTTAYAM,Kidangoor,Kidangoor,exact,1.000,16,16
+G05050,G050706,Grama Panchayat,KOTTAYAM,Meenadom,Meenadom,exact,1.000,14,14
+G05051,G050901,Grama Panchayat,KOTTAYAM,Madappally,Madappally,exact,1.000,22,22
+G05052,G050902,Grama Panchayat,KOTTAYAM,Paippadu,Paippad,fuzzy,1.000,17,17
+G05053,G050903,Grama Panchayat,KOTTAYAM,Thrikkodithanam,Thrikkodithanam,exact,1.000,22,22
+G05054,G050904,Grama Panchayat,KOTTAYAM,Vakathanam,Vakathanam,exact,1.000,21,21
+G05055,G050905,Grama Panchayat,KOTTAYAM,Vazhappally,Vazhappally,exact,1.000,22,22
+G05056,G051001,Grama Panchayat,KOTTAYAM,Chirakkadavu,Chirakkadavu,exact,0.955,22,22
+G05057,G051002,Grama Panchayat,KOTTAYAM,Kangazha,Kangazha,exact,1.000,16,16
+G05058,G051003,Grama Panchayat,KOTTAYAM,Nedumkunnam,Nedumkunnam,exact,0.938,16,16
+G05059,G051004,Grama Panchayat,KOTTAYAM,Vellavoor,Vellavoor,exact,1.000,14,14
+G05060,G051005,Grama Panchayat,KOTTAYAM,Vazhoor,Vazhoor,exact,1.000,18,18
+G05061,G051006,Grama Panchayat,KOTTAYAM,Karukachal,Karukachal,exact,1.000,17,17
+G05062,G051104,Grama Panchayat,KOTTAYAM,Manimala,Manimala,exact,1.000,16,16
+G05063,G051101,Grama Panchayat,KOTTAYAM,Erumely,Erumeli,fuzzy,0.958,24,24
+G05064,G051102,Grama Panchayat,KOTTAYAM,Kanjirappally,Kanjirappally,exact,0.958,24,24
+G05065,G051103,Grama Panchayat,KOTTAYAM,Koottickal,Koottickal,exact,1.000,14,14
+G05066,G051105,Grama Panchayat,KOTTAYAM,Mundakayam,Mundakayam,exact,0.913,23,23
+G05067,G051107,Grama Panchayat,KOTTAYAM,Koruthode,Koruthode,exact,1.000,14,14
+G05068,G051106,Grama Panchayat,KOTTAYAM,Parathodu,Parathode,fuzzy,0.952,21,21
+G05069,G050805,Grama Panchayat,KOTTAYAM,Kurichy,Kurichy,exact,0.955,22,22
+G05070,G050803,Grama Panchayat,KOTTAYAM,Panachikadu,Panachikkad,fuzzy,1.000,24,24
+G05071,G050802,Grama Panchayat,KOTTAYAM,Puthuppally,Puthuppally,exact,0.947,19,19
+G05072,G050804,Grama Panchayat,KOTTAYAM,Vijayapuram,Vijayapuram,exact,1.000,20,20
+G05073,G050801,Grama Panchayat,KOTTAYAM,Ayarkunnam,Ayarkkunnam,fuzzy,1.000,21,21
+G06001,G060101,Grama Panchayat,IDUKKI,Adimali,Adimaly,fuzzy,1.000,24,24
+G06002,G060102,Grama Panchayat,IDUKKI,Konnathady,Konnathady,exact,1.000,19,19
+G06003,G060103,Grama Panchayat,IDUKKI,Baisonvalley,Bisonvalley,fuzzy,1.000,14,14
+G06004,G060104,Grama Panchayat,IDUKKI,Vellathooval,Vellathooval,exact,0.944,18,18
+G06005,G060105,Grama Panchayat,IDUKKI,Pallivasal,Pallivasal,exact,1.000,14,14
+G06006,G060201,Grama Panchayat,IDUKKI,Marayoor,Marayoor,exact,1.000,14,14
+G06007,G060202,Grama Panchayat,IDUKKI,Munnar,Munnar,exact,0.900,20,20
+G06008,G060203,Grama Panchayat,IDUKKI,Kanthalloor,Kanthalloor,exact,1.000,14,14
+G06009,G060204,Grama Panchayat,IDUKKI,Vattavada,Vattavada,exact,1.000,14,14
+G06010,G060205,Grama Panchayat,IDUKKI,Santhanpara,Santhanpara,exact,1.000,14,14
+G06011,G060206,Grama Panchayat,IDUKKI,Chinnakanal,Chinnakanal,exact,1.000,14,14
+G06012,G060207,Grama Panchayat,IDUKKI,Mankulam,Mankulam,exact,1.000,14,14
+G06013,G060208,Grama Panchayat,IDUKKI,Devikulam,Devikulam,exact,1.000,17,17
+G06014,G060209,Grama Panchayat,IDUKKI,Edamalakudy,Edamalakkudy,fuzzy,0.714,14,14
+G06015,G060301,Grama Panchayat,IDUKKI,Pampadumpara,Pampadumpara,exact,1.000,16,16
+G06016,G060302,Grama Panchayat,IDUKKI,Senapathy,Senapathy,exact,1.000,14,14
+G06017,G060303,Grama Panchayat,IDUKKI,Karunapuram,Karunapuram,exact,1.000,18,18
+G06018,G060304,Grama Panchayat,IDUKKI,Rajakkad,Rajakkad,exact,0.929,14,14
+G06019,G060305,Grama Panchayat,IDUKKI,Nedumkandom,Nedumkandam,fuzzy,1.000,24,24
+G06020,G060306,Grama Panchayat,IDUKKI,Udumbanchola,Udumbanchola,exact,1.000,14,14
+G06021,G060307,Grama Panchayat,IDUKKI,Rajakumary,Rajakumari,fuzzy,1.000,14,14
+G06022,G060401,Grama Panchayat,IDUKKI,Vannappuram,Vannappuram,exact,0.895,19,19
+G06023,G060402,Grama Panchayat,IDUKKI,Udumbannoor,Udumbanoor,fuzzy,1.000,17,17
+G06024,G060403,Grama Panchayat,IDUKKI,Kodikulam,Kodikulam,exact,1.000,14,14
+G06025,G060404,Grama Panchayat,IDUKKI,Alakode,Alakode,exact,1.000,14,14
+G06026,G060405,Grama Panchayat,IDUKKI,Velliyamattom,Velliyamattom,exact,1.000,16,16
+G06027,G060406,Grama Panchayat,IDUKKI,Karimannoor,Karimannoor,exact,1.000,15,15
+G06028,G060407,Grama Panchayat,IDUKKI,Kudayathoor,Kudayathoor,exact,1.000,14,14
+G06029,G060501,Grama Panchayat,IDUKKI,Idukki-Kanjikuzhy,Idukki Kanjikuzhy,exact,1.000,18,18
+G06030,G060502,Grama Panchayat,IDUKKI,Vathikudy,Vathikudy,exact,1.000,19,19
+G06031,G060503,Grama Panchayat,IDUKKI,Arakulam,Arakulam,exact,1.000,15,15
+G06032,G060504,Grama Panchayat,IDUKKI,Kamakshy,Kamakshy,exact,1.000,15,15
+G06033,G060505,Grama Panchayat,IDUKKI,Vazhathope,Vazhathope,exact,1.000,15,15
+G06034,G060506,Grama Panchayat,IDUKKI,Mariyapuram,Mariyapuram,exact,1.000,14,14
+G06036,G060602,Grama Panchayat,IDUKKI,Upputhara,Upputhara,exact,0.944,18,18
+G06037,G060603,Grama Panchayat,IDUKKI,Vandanmedu,Vandanmedu,exact,1.000,20,20
+G06038,G060604,Grama Panchayat,IDUKKI,Kanchiyar,Kanchiyar,exact,1.000,17,17
+G06039,G060605,Grama Panchayat,IDUKKI,Erattayar,Erattayar,exact,1.000,15,15
+G06040,G060606,Grama Panchayat,IDUKKI,Ayyappancoil,Ayyappancoil,exact,1.000,14,14
+G06041,G060607,Grama Panchayat,IDUKKI,Chakkupallam,Chakkupallam,exact,1.000,16,16
+G06042,G060702,Grama Panchayat,IDUKKI,Kumaramangalam,Kumaramangalam,exact,0.929,14,14
+G06043,G060701,Grama Panchayat,IDUKKI,Muttom,Muttom,exact,1.000,14,14
+G06044,G060703,Grama Panchayat,IDUKKI,Edavetty,Edavetty,exact,1.000,14,14
+G06045,G060704,Grama Panchayat,IDUKKI,Karimkunnam,Karimkunnam,exact,1.000,14,14
+G06046,G060705,Grama Panchayat,IDUKKI,Manakkad,Manakkad,exact,1.000,14,14
+G06047,G060706,Grama Panchayat,IDUKKI,Purapuzha,Purapuzha,exact,1.000,14,14
+G06048,G060801,Grama Panchayat,IDUKKI,Peruvanthanam,Peruvanthanam,exact,1.000,14,14
+G06049,G060802,Grama Panchayat,IDUKKI,Kumily,Kumily,exact,0.955,22,22
+G06050,G060803,Grama Panchayat,IDUKKI,Kokkayar,Kokkayar,exact,1.000,14,14
+G06051,G060804,Grama Panchayat,IDUKKI,Peermade,Peerumedu,override,1.000,16,16
+G06052,G060805,Grama Panchayat,IDUKKI,Elappara,Elappara,exact,1.000,17,17
+G06053,G060806,Grama Panchayat,IDUKKI,Vandiperiyar,Vandiperiyar,exact,0.792,24,24
+G07001,G070101,Grama Panchayat,ERNAKULAM,Chendamangalam,Chendamangalam,exact,1.000,19,19
+G07002,G070102,Grama Panchayat,ERNAKULAM,Kottuvally,Kottuvally,exact,1.000,24,24
+G07003,G070103,Grama Panchayat,ERNAKULAM,Ezhikkara,Ezhikkara,exact,1.000,15,15
+G07004,G070104,Grama Panchayat,ERNAKULAM,Vadakkekara,Vadakkekara,exact,0.952,21,21
+G07005,G070105,Grama Panchayat,ERNAKULAM,Chittattukara,Chittattukara,exact,1.000,20,21
+G07006,G070201,Grama Panchayat,ERNAKULAM,Karumalloor,Karumalloor,exact,1.000,22,22
+G07007,G070202,Grama Panchayat,ERNAKULAM,Varapuzha,Varapuzha,exact,1.000,18,18
+G07008,G070203,Grama Panchayat,ERNAKULAM,Alangad,Alangad,exact,1.000,24,24
+G07009,G070204,Grama Panchayat,ERNAKULAM,Kadungalloor,Kadungallur,fuzzy,1.000,24,24
+G07010,G070301,Grama Panchayat,ERNAKULAM,Mookkanoor,Mookkannur,fuzzy,1.000,15,15
+G07011,G070302,Grama Panchayat,ERNAKULAM,Thuravoor,Thuravoor,exact,1.000,16,16
+G07012,G070303,Grama Panchayat,ERNAKULAM,Manjapra,Manjapra,exact,1.000,14,14
+G07013,G070304,Grama Panchayat,ERNAKULAM,Karukutty,Karukutty,exact,1.000,19,19
+G07014,G070305,Grama Panchayat,ERNAKULAM,Ayyampuzha,Ayyampuzha,exact,0.857,14,14
+G07015,G070306,Grama Panchayat,ERNAKULAM,Kanjoor,Kanjoor,exact,1.000,17,17
+G07016,G070307,Grama Panchayat,ERNAKULAM,Kalady,Kalady,exact,1.000,19,19
+G07017,G070308,Grama Panchayat,ERNAKULAM,Malayattoor- Neeleeswaram,Malayattoor Neeleeswaram,exact,1.000,18,18
+G07018,G070401,Grama Panchayat,ERNAKULAM,Asamannur,Asamannoor,fuzzy,1.000,15,15
+G07019,G070402,Grama Panchayat,ERNAKULAM,Mudakkuzha,Mudakuzha,fuzzy,1.000,14,14
+G07020,G070403,Grama Panchayat,ERNAKULAM,Vengoor,Vengoor,exact,0.938,16,16
+G07021,G070404,Grama Panchayat,ERNAKULAM,Rayamangalam,Rayamangalam,exact,1.000,22,22
+G07022,G070405,Grama Panchayat,ERNAKULAM,Koovappady,Koovappady,exact,0.955,22,22
+G07023,G070406,Grama Panchayat,ERNAKULAM,Okkal,Okkal,exact,1.000,17,17
+G07024,G070501,Grama Panchayat,ERNAKULAM,Vengola,Vengola,exact,1.000,24,24
+G07025,G070502,Grama Panchayat,ERNAKULAM,Vazhakkulam,Vazhakkulam,exact,1.000,24,24
+G07026,G070503,Grama Panchayat,ERNAKULAM,Kizhakkambalam,Kizhakkambalam,exact,1.000,21,21
+G07027,G070504,Grama Panchayat,ERNAKULAM,Choornikkara,Choornikkara,exact,0.905,21,21
+G07028,G070505,Grama Panchayat,ERNAKULAM,Edathala,Edathala,exact,1.000,24,24
+G07029,G070506,Grama Panchayat,ERNAKULAM,Keezhmadu,Keezhmad,fuzzy,1.000,22,22
+G07030,G070601,Grama Panchayat,ERNAKULAM,Kadamakkudy,Kadamakudy,fuzzy,1.000,14,14
+G07031,G070602,Grama Panchayat,ERNAKULAM,Cheranallur,Cheranallur,exact,1.000,20,20
+G07032,G070603,Grama Panchayat,ERNAKULAM,Mulavukadu,Mulavukad,fuzzy,1.000,16,16
+G07033,G070604,Grama Panchayat,ERNAKULAM,Elamkunnapuzha,Elamkunnapuzha,exact,1.000,24,24
+G07034,G070701,Grama Panchayat,ERNAKULAM,Njarakkal,Njarakkal,exact,1.000,17,17
+G07035,G070702,Grama Panchayat,ERNAKULAM,Nayarambalam,Nayarambalam,exact,1.000,17,17
+G07036,G070703,Grama Panchayat,ERNAKULAM,Edavanakad,Edavanakkad,fuzzy,1.000,16,16
+G07037,G070704,Grama Panchayat,ERNAKULAM,Pallippuram,Pallippuram,exact,1.000,24,24
+G07038,G070705,Grama Panchayat,ERNAKULAM,Kuzhuppilly,Kuzhuppilly,exact,0.929,14,14
+G07039,G070801,Grama Panchayat,ERNAKULAM,Chellanam,Chellanam,exact,1.000,22,22
+G07040,G070802,Grama Panchayat,ERNAKULAM,Kumbalanghy,Kumbalangy,fuzzy,0.947,19,19
+G07041,G070803,Grama Panchayat,ERNAKULAM,Kumbalam,Kumbalam,exact,1.000,19,19
+G07042,G070901,Grama Panchayat,ERNAKULAM,Udayamperoor,Udayamperur,fuzzy,1.000,23,23
+G07043,G070902,Grama Panchayat,ERNAKULAM,Mulamthuruthy,Mulumthuruthy,fuzzy,1.000,18,18
+G07044,G070903,Grama Panchayat,ERNAKULAM,Chottanikara,Chottanikkara,fuzzy,0.882,17,17
+G07045,G070904,Grama Panchayat,ERNAKULAM,Edakkattuvayal,Edakkattuvayal,exact,1.000,15,15
+G07046,G070905,Grama Panchayat,ERNAKULAM,Amballur,Amballur,exact,1.000,18,18
+G07047,G070906,Grama Panchayat,ERNAKULAM,Maneedu,Maneed,fuzzy,1.000,14,14
+G07048,G071001,Grama Panchayat,ERNAKULAM,Poothrikka,Poothrika,fuzzy,1.000,16,16
+G07049,G071002,Grama Panchayat,ERNAKULAM,Thiruvaniyoor,Thiruvaniyoor,exact,1.000,18,18
+G07050,G071003,Grama Panchayat,ERNAKULAM,Vadavucode-Puthencruz,Vadavucode Puthen Cruz,exact,0.941,17,17
+G07051,G071004,Grama Panchayat,ERNAKULAM,Mazhuvannur,Mazhuvannoor,fuzzy,1.000,21,21
+G07052,G071005,Grama Panchayat,ERNAKULAM,Aikkaranadu,Aikaranad,fuzzy,1.000,16,16
+G07053,G071006,Grama Panchayat,ERNAKULAM,Kunnathunad,Kunnathunad,exact,1.000,21,21
+G07054,G071101,Grama Panchayat,ERNAKULAM,Paingottoor,Paingottur,fuzzy,1.000,14,14
+G07055,G071102,Grama Panchayat,ERNAKULAM,Nellikuzhy,Nellikkuzhi,fuzzy,0.792,24,24
+G07056,G071103,Grama Panchayat,ERNAKULAM,Pindimana,Pindimana,exact,0.929,14,14
+G07057,G071105,Grama Panchayat,ERNAKULAM,Kavalangad,Kavalangad,exact,0.895,19,19
+G07058,G071106,Grama Panchayat,ERNAKULAM,Varapetty,Varappetty,fuzzy,1.000,15,15
+G07059,G071107,Grama Panchayat,ERNAKULAM,Keerampara,Keerampara,exact,1.000,14,14
+G07060,G071108,Grama Panchayat,ERNAKULAM,Pothanikkad,Pothanicad,fuzzy,1.000,14,14
+G07061,G071109,Grama Panchayat,ERNAKULAM,Pallarimangalam,Pallarimangalam,exact,0.929,14,14
+G07062,G071110,Grama Panchayat,ERNAKULAM,Kuttampuzha,Kuttampuzha,exact,1.000,17,17
+G07063,G071104,Grama Panchayat,ERNAKULAM,Kottapady,Kottappady,fuzzy,1.000,15,15
+G07064,G071201,Grama Panchayat,ERNAKULAM,Elanji,Elanji,exact,1.000,14,14
+G07066,G071204,Grama Panchayat,ERNAKULAM,Thirumaradi,Thirumarady,fuzzy,1.000,15,15
+G07068,G071205,Grama Panchayat,ERNAKULAM,Palakuzha,Palakuzha,exact,1.000,14,14
+G07069,G071206,Grama Panchayat,ERNAKULAM,Pampakuda,Pampakuda,exact,1.000,14,15
+G07070,G071207,Grama Panchayat,ERNAKULAM,Ramamangalam,Ramamangalam,exact,1.000,14,14
+G07071,G071302,Grama Panchayat,ERNAKULAM,Chengamanadu,Chengamanad,fuzzy,1.000,19,19
+G07072,G071303,Grama Panchayat,ERNAKULAM,Nedumbassery,Nedumbassery,exact,1.000,20,20
+G07073,G071304,Grama Panchayat,ERNAKULAM,Parakkadavu,Parakkadavu,exact,1.000,20,20
+G07074,G071305,Grama Panchayat,ERNAKULAM,Kunnukara,Kunnukara,exact,1.000,16,16
+G07075,G071306,Grama Panchayat,ERNAKULAM,Sreemoolanagaram,Sreemoolanagaram,exact,1.000,18,18
+G07076,G071301,Grama Panchayat,ERNAKULAM,Puthenvelikara,Puthenvelikkara,fuzzy,0.947,19,19
+G07077,G071401,Grama Panchayat,ERNAKULAM,Avoly,Avoly,exact,1.000,15,15
+G07078,G071402,Grama Panchayat,ERNAKULAM,Arakkuzha,Arakuzha,fuzzy,1.000,14,14
+G07079,G071404,Grama Panchayat,ERNAKULAM,Paipra,Paipra,exact,1.000,24,24
+G07080,G071405,Grama Panchayat,ERNAKULAM,Kalloorkad,Kalloorkkad,fuzzy,1.000,14,14
+G07081,G071406,Grama Panchayat,ERNAKULAM,Ayavana,Ayavana,exact,0.875,16,16
+G07082,G071407,Grama Panchayat,ERNAKULAM,Manjallur,Manjalloor,fuzzy,1.000,14,14
+G07083,G071408,Grama Panchayat,ERNAKULAM,Marady,Marady,exact,1.000,14,14
+G07084,G071403,Grama Panchayat,ERNAKULAM,Valakom,Valakom,exact,0.867,15,15
+G08001,G080101,Grama Panchayat,THRISSUR,Kadappuram,Kadappuram,exact,0.944,18,18
+G08002,G080102,Grama Panchayat,THRISSUR,Orumanayoor,Orumanayur,fuzzy,0.929,14,14
+G08003,G080103,Grama Panchayat,THRISSUR,Punnayoor,Punnayur,fuzzy,1.000,22,22
+G08004,G080104,Grama Panchayat,THRISSUR,Punnayoorkulam,Punnayurkulam,fuzzy,0.952,21,21
+G08005,G080105,Grama Panchayat,THRISSUR,Vadakkekkad,Vadekkekad,fuzzy,1.000,18,18
+G08006,G080201,Grama Panchayat,THRISSUR,Choondal,Choondal,exact,0.700,20,20
+G08007,G080202,Grama Panchayat,THRISSUR,Chowannur,Chowwannur,fuzzy,0.857,14,14
+G08008,G080203,Grama Panchayat,THRISSUR,Kadavalloor,Kadavallur,fuzzy,1.000,22,22
+G08009,G080204,Grama Panchayat,THRISSUR,Kandanassery,Kandanassery,exact,1.000,17,17
+G08010,G080205,Grama Panchayat,THRISSUR,Kattakampal,Kattakampal,exact,1.000,18,18
+G08011,G080206,Grama Panchayat,THRISSUR,Porkulam,Porkulam,exact,1.000,14,14
+G08012,G080207,Grama Panchayat,THRISSUR,Kadangode,Kadangode,exact,0.905,21,21
+G08013,G080208,Grama Panchayat,THRISSUR,Velur,Velur,exact,0.947,19,19
+G08014,G080301,Grama Panchayat,THRISSUR,Desamangalam,Desamangalam,exact,1.000,16,16
+G08015,G080302,Grama Panchayat,THRISSUR,Erumapetty,Erumapetty,exact,1.000,19,19
+G08017,G080304,Grama Panchayat,THRISSUR,Mullurkkara,Mullurkara,fuzzy,1.000,16,16
+G08018,G080305,Grama Panchayat,THRISSUR,Thekkumkara,Thekkumkara,exact,1.000,19,19
+G08019,G080306,Grama Panchayat,THRISSUR,Varavoor,Varavoor,exact,1.000,16,16
+G08021,G080401,Grama Panchayat,THRISSUR,Chelakkara,Chelakkara,exact,1.000,24,24
+G08022,G080402,Grama Panchayat,THRISSUR,Vallathole Nagar,Vallathol Nagar,fuzzy,1.000,18,18
+G08023,G080403,Grama Panchayat,THRISSUR,Kondazhy,Kondazhy,exact,1.000,16,16
+G08024,G080404,Grama Panchayat,THRISSUR,Panjal,Panjal,exact,1.000,18,18
+G08025,G080405,Grama Panchayat,THRISSUR,Pazhayannur,Pazhayannur,exact,0.958,24,24
+G08026,G080406,Grama Panchayat,THRISSUR,Thiruvilwamala,Thiruvilwamala,exact,1.000,19,19
+G08027,G080501,Grama Panchayat,THRISSUR,Madakkathara,Madakkathara,exact,1.000,18,18
+G08028,G080502,Grama Panchayat,THRISSUR,Nadathara,Nadathara,exact,1.000,20,20
+G08029,G080503,Grama Panchayat,THRISSUR,Pananchery,Pananchery,exact,1.000,24,24
+G08030,G080504,Grama Panchayat,THRISSUR,Puthur,Puthur,exact,1.000,24,24
+G08031,G080601,Grama Panchayat,THRISSUR,Adat,Adat,exact,1.000,20,20
+G08032,G080602,Grama Panchayat,THRISSUR,Avanur,Avanur,exact,1.000,16,16
+G08033,G080603,Grama Panchayat,THRISSUR,Kaiparambu,Kaiparamba,fuzzy,1.000,20,20
+G08034,G080604,Grama Panchayat,THRISSUR,Mulamkunnathukavu,Mulakunnathukavu,fuzzy,0.875,16,16
+G08035,G080605,Grama Panchayat,THRISSUR,Tholur,Tholur,exact,1.000,15,15
+G08036,G080606,Grama Panchayat,THRISSUR,Kolazhy,Kolazhy,exact,1.000,20,20
+G08037,G080701,Grama Panchayat,THRISSUR,Elavally,Elavally,exact,1.000,18,18
+G08038,G080702,Grama Panchayat,THRISSUR,Mullassery,Mullassery,exact,0.875,16,16
+G08039,G080703,Grama Panchayat,THRISSUR,Pavaratty,Pavaratty,exact,1.000,16,16
+G08040,G080704,Grama Panchayat,THRISSUR,Venkitangu,Venkitangu,exact,1.000,18,18
+G08041,G080801,Grama Panchayat,THRISSUR,Engandiyoor,Engandiyur,fuzzy,1.000,17,17
+G08042,G080802,Grama Panchayat,THRISSUR,Vadanappilly,Vatanappilly,fuzzy,1.000,20,20
+G08043,G080803,Grama Panchayat,THRISSUR,Thalikulam,Talikulam,fuzzy,1.000,18,18
+G08044,G080804,Grama Panchayat,THRISSUR,Nattika,Nattika,exact,1.000,15,15
+G08045,G080805,Grama Panchayat,THRISSUR,Valappad,Valappad,exact,1.000,22,22
+G08046,G081401,Grama Panchayat,THRISSUR,Edathiruthy,Edathiruthy,exact,0.895,19,19
+G08047,G081402,Grama Panchayat,THRISSUR,Kaipamangalam,Kaipamangalam,exact,0.955,22,22
+G08048,G081403,Grama Panchayat,THRISSUR,Mathilakam,Mathilakam,exact,0.947,19,19
+G08049,G081404,Grama Panchayat,THRISSUR,Perinjanam,Perinjanam,exact,1.000,16,16
+G08050,G081405,Grama Panchayat,THRISSUR,Sree Narayanapuram,Sree Narayanapuram,exact,1.000,23,23
+G08051,G081406,Grama Panchayat,THRISSUR,Edavilangu,Edavilangu,exact,1.000,16,16
+G08052,G081407,Grama Panchayat,THRISSUR,Eriyad,Eriyad,exact,1.000,24,24
+G08053,G080901,Grama Panchayat,THRISSUR,Anthikkad,Anthikkad,exact,0.875,16,16
+G08054,G080902,Grama Panchayat,THRISSUR,Thanniam,Thanniyam,fuzzy,1.000,19,19
+G08055,G080903,Grama Panchayat,THRISSUR,Chazhur,Chazhoor,fuzzy,1.000,19,19
+G08056,G080904,Grama Panchayat,THRISSUR,Manalur,Manalur,exact,0.810,21,21
+G08057,G080905,Grama Panchayat,THRISSUR,Arimbur,Arimpoor,override,1.000,20,20
+G08058,G081001,Grama Panchayat,THRISSUR,Avinissery,Avinissery,exact,1.000,16,16
+G08059,G081002,Grama Panchayat,THRISSUR,Cherpu,Cherpu,exact,1.000,22,22
+G08060,G081003,Grama Panchayat,THRISSUR,Paralam,Paralam,exact,0.941,17,17
+G08061,G081004,Grama Panchayat,THRISSUR,Vallachira,Vallachira,exact,1.000,16,16
+G08062,G081101,Grama Panchayat,THRISSUR,Alagappanagar,Alagappa Nagar,exact,0.947,19,19
+G08063,G081102,Grama Panchayat,THRISSUR,Kodakara,Kodakara,exact,0.950,20,20
+G08064,G081103,Grama Panchayat,THRISSUR,Mattathur,Mattathur,exact,1.000,24,24
+G08065,G081104,Grama Panchayat,THRISSUR,Nenmanikkara,Nenmanikkara,exact,1.000,16,16
+G08066,G081105,Grama Panchayat,THRISSUR,Pudukkad,Pudukkad,exact,1.000,17,17
+G08067,G081106,Grama Panchayat,THRISSUR,Thrikkur,Trikkur,fuzzy,1.000,19,19
+G08068,G081107,Grama Panchayat,THRISSUR,Varantharappilly,Varandarappilly,fuzzy,1.000,24,24
+G08069,G081201,Grama Panchayat,THRISSUR,Karalam,Karalam,exact,0.938,16,16
+G08070,G081202,Grama Panchayat,THRISSUR,Kattoor,Kattur,fuzzy,1.000,15,15
+G08071,G081203,Grama Panchayat,THRISSUR,Muriyad,Muriyad,exact,0.944,18,18
+G08072,G081204,Grama Panchayat,THRISSUR,Parappookkara,Parappukkara,fuzzy,1.000,19,19
+G08073,G081301,Grama Panchayat,THRISSUR,Padiyoor,Padiyur,fuzzy,1.000,15,15
+G08074,G081302,Grama Panchayat,THRISSUR,Poomangalam,Poomangalam,exact,1.000,14,14
+G08075,G081303,Grama Panchayat,THRISSUR,Puthenchira,Puthenchira,exact,0.938,16,16
+G08076,G081304,Grama Panchayat,THRISSUR,Vellangalur,Vellangallur,fuzzy,1.000,23,23
+G08077,G081305,Grama Panchayat,THRISSUR,Velookkara,Velukara,fuzzy,0.842,19,19
+G08078,G081501,Grama Panchayat,THRISSUR,Aloor,Alur,override,0.958,24,24
+G08079,G081502,Grama Panchayat,THRISSUR,Annamanada,Annamanada,exact,1.000,20,20
+G08080,G081503,Grama Panchayat,THRISSUR,Kuzhur,Kuzhur,exact,1.000,15,15
+G08081,G081504,Grama Panchayat,THRISSUR,Mala,Mala,exact,1.000,21,21
+G08082,G081505,Grama Panchayat,THRISSUR,Poyya,Poyya,exact,1.000,16,16
+G08083,G081601,Grama Panchayat,THRISSUR,Kadukutty,Kadukutty,exact,1.000,18,18
+G08084,G081602,Grama Panchayat,THRISSUR,Kodassery,Kodassery,exact,1.000,21,21
+G08085,G081603,Grama Panchayat,THRISSUR,Koratty,Koratty,exact,0.952,21,21
+G08086,G081604,Grama Panchayat,THRISSUR,Meloor,Melur,fuzzy,1.000,19,19
+G08087,G081605,Grama Panchayat,THRISSUR,Pariyaram,Pariyaram,exact,1.000,17,17
+G08088,G081606,Grama Panchayat,THRISSUR,Athirappilly,Athirappally,fuzzy,1.000,14,14
+G09001,G090101,Grama Panchayat,PALAKKAD,Anakkara,Anakkara,exact,0.824,17,17
+G09002,G090102,Grama Panchayat,PALAKKAD,Chalissery,Chalisseri,fuzzy,1.000,17,17
+G09003,G090103,Grama Panchayat,PALAKKAD,Kappoor,Kappur,fuzzy,0.900,20,20
+G09004,G090104,Grama Panchayat,PALAKKAD,Nagalassery,Nagalassery,exact,1.000,19,19
+G09005,G090105,Grama Panchayat,PALAKKAD,Pattithara,Pattithara,exact,0.952,21,21
+G09006,G090106,Grama Panchayat,PALAKKAD,Thirumittakode,Thirumittacode,fuzzy,1.000,20,20
+G09007,G090107,Grama Panchayat,PALAKKAD,Thrithala,Thrithala,exact,1.000,19,19
+G09008,G090201,Grama Panchayat,PALAKKAD,Koppam,Koppam,exact,1.000,20,20
+G09009,G090202,Grama Panchayat,PALAKKAD,Kulukkallur,Kulukkallur,exact,1.000,19,19
+G09010,G090203,Grama Panchayat,PALAKKAD,Muthuthala,Muthuthala,exact,0.706,17,17
+G09011,G090204,Grama Panchayat,PALAKKAD,Ongallur,Ongallur,exact,1.000,24,24
+G09013,G090207,Grama Panchayat,PALAKKAD,Thiruvegappura,Thiruvegapura,fuzzy,1.000,21,21
+G09014,G090208,Grama Panchayat,PALAKKAD,Vilayur,Vilayur,exact,1.000,17,17
+G09015,G090206,Grama Panchayat,PALAKKAD,Paruthur,Paruthur,exact,0.944,18,18
+G09016,G090301,Grama Panchayat,PALAKKAD,Ambalapara,Ambalapara,exact,1.000,23,23
+G09017,G090302,Grama Panchayat,PALAKKAD,Ananganadi,Ananganadi,exact,1.000,17,17
+G09018,G090303,Grama Panchayat,PALAKKAD,Chalavara,Chalavara,exact,1.000,17,17
+G09019,G090304,Grama Panchayat,PALAKKAD,Lekkidi-Perur,Lakkidi-perur,fuzzy,1.000,21,21
+G09020,G090305,Grama Panchayat,PALAKKAD,Vaniyamkulam,Vaniamkulam,fuzzy,1.000,20,20
+G09021,G090306,Grama Panchayat,PALAKKAD,Thrikkadeiri,Thrikkadeeri,fuzzy,0.750,16,16
+G09022,G090307,Grama Panchayat,PALAKKAD,Vallapuzha,Vallapuzha,exact,0.947,19,19
+G09023,G090308,Grama Panchayat,PALAKKAD,Nellaya,Nellaya,exact,1.000,22,22
+G09025,G090402,Grama Panchayat,PALAKKAD,Kadampazhipuram,Kadampazhipuram,exact,1.000,20,20
+G09026,G090403,Grama Panchayat,PALAKKAD,Karimpuzha,Karimpuzha,exact,1.000,20,20
+G09027,G090405,Grama Panchayat,PALAKKAD,Sreekrishnapuram,Sreekrishnapuram,exact,1.000,16,16
+G09028,G090406,Grama Panchayat,PALAKKAD,Vellinezhi,Vellinezhi,exact,1.000,14,14
+G09029,G090407,Grama Panchayat,PALAKKAD,Karakurissi,Karakurissi,exact,1.000,19,19
+G09030,G090507,Grama Panchayat,PALAKKAD,Thachanattukara,Thachanattukara,exact,1.000,18,18
+G09031,G090404,Grama Panchayat,PALAKKAD,Pookkottukavu,Pookkottukavu,exact,1.000,14,14
+G09032,G090501,Grama Panchayat,PALAKKAD,Alanallur,Alanallur,exact,1.000,24,24
+G09033,G090502,Grama Panchayat,PALAKKAD,Karimba,Karimba,exact,0.944,18,18
+G09034,G090503,Grama Panchayat,PALAKKAD,Kottoppadam,Kottappadam,fuzzy,0.958,24,24
+G09035,G090504,Grama Panchayat,PALAKKAD,Kumaramputhur,Kumaramputhur,exact,0.952,21,21
+G09036,G090505,Grama Panchayat,PALAKKAD,Kanjirapuzha,Kanjirapuzha,exact,1.000,21,21
+G09038,G090508,Grama Panchayat,PALAKKAD,Thachampara,Tachampara,fuzzy,1.000,15,15
+G09039,G090509,Grama Panchayat,PALAKKAD,Thenkara,Thenkara,exact,1.000,18,18
+G09040,G090601,Grama Panchayat,PALAKKAD,Agali,Agali,exact,0.857,21,21
+G09041,G090602,Grama Panchayat,PALAKKAD,Pudur,Pudur,exact,0.929,14,14
+G09042,G090603,Grama Panchayat,PALAKKAD,Sholayur,Sholayoor,fuzzy,1.000,14,14
+G09043,G090707,Grama Panchayat,PALAKKAD,Pirayiri,Pirayiri,exact,0.958,24,24
+G09044,G090705,Grama Panchayat,PALAKKAD,Mundur,Mundur,exact,0.900,20,20
+G09045,G090702,Grama Panchayat,PALAKKAD,Kongad,Kongad,exact,1.000,20,20
+G09046,G090701,Grama Panchayat,PALAKKAD,Keralasseri,Keralassery,fuzzy,1.000,14,14
+G09047,G090704,Grama Panchayat,PALAKKAD,Mannur,Mannur,exact,1.000,15,15
+G09048,G090703,Grama Panchayat,PALAKKAD,Mankara,Mankara,exact,0.933,15,15
+G09049,G090706,Grama Panchayat,PALAKKAD,Parli,Parali,fuzzy,1.000,21,21
+G09050,G090801,Grama Panchayat,PALAKKAD,Kottayi,Kottayi,exact,0.875,16,16
+G09051,G090802,Grama Panchayat,PALAKKAD,Kuthanur,Kuthanoor,fuzzy,0.941,17,17
+G09052,G090803,Grama Panchayat,PALAKKAD,Kuzhalmannam,Kuzhalmannam,exact,0.944,18,18
+G09053,G090804,Grama Panchayat,PALAKKAD,Mathur,Mathur,exact,0.889,18,18
+G09054,G090805,Grama Panchayat,PALAKKAD,Peringottukurissi,Peringottukurissi,exact,0.944,18,18
+G09055,G090806,Grama Panchayat,PALAKKAD,Thenkurissi,Thenkurissi,exact,1.000,18,18
+G09056,G090807,Grama Panchayat,PALAKKAD,Kannadi,Kannadi,exact,1.000,17,17
+G09057,G090901,Grama Panchayat,PALAKKAD,Eruthempathy,Eruthempathy,exact,0.867,15,15
+G09058,G090902,Grama Panchayat,PALAKKAD,Kozhinjampara,Kozhinjampara,exact,0.947,19,19
+G09059,G090903,Grama Panchayat,PALAKKAD,Nalleppilly,Nalleppilly,exact,0.952,21,21
+G09060,G090904,Grama Panchayat,PALAKKAD,Perumatty,Perumatty,exact,1.000,20,20
+G09061,G090905,Grama Panchayat,PALAKKAD,Vadakarapathy,Vadakarapathy,exact,0.889,18,18
+G09062,G090906,Grama Panchayat,PALAKKAD,Elappully,Elappully,exact,1.000,23,23
+G09063,G090907,Grama Panchayat,PALAKKAD,Polpully,Polpully,exact,1.000,14,14
+G09064,G091001,Grama Panchayat,PALAKKAD,Kollengode,Kollengode,exact,0.947,19,19
+G09065,G091002,Grama Panchayat,PALAKKAD,Koduvayur,Koduvayur,exact,1.000,19,19
+G09066,G091003,Grama Panchayat,PALAKKAD,Muthalamada,Muthalamada,exact,0.864,22,22
+G09067,G091004,Grama Panchayat,PALAKKAD,Pudunagaram,Puthunagaram,fuzzy,1.000,15,15
+G09068,G091005,Grama Panchayat,PALAKKAD,Vadavannur,Vadavannur,exact,0.857,14,14
+G09069,G091007,Grama Panchayat,PALAKKAD,Peruvemba,Peruvemba,exact,0.933,15,15
+G09070,G091006,Grama Panchayat,PALAKKAD,Pattanchery,Pattencherry,fuzzy,1.000,18,18
+G09071,G091101,Grama Panchayat,PALAKKAD,Ayiloor,Ayiloor,exact,1.000,19,19
+G09072,G091102,Grama Panchayat,PALAKKAD,Nelliyampathy,Nelliampathy,fuzzy,0.929,14,14
+G09073,G091103,Grama Panchayat,PALAKKAD,Elavanchery,Elavancherry,fuzzy,1.000,15,15
+G09074,G091104,Grama Panchayat,PALAKKAD,Pallassana,Pallassana,exact,0.824,17,17
+G09075,G091105,Grama Panchayat,PALAKKAD,Melarcode,Melarcode,exact,1.000,18,18
+G09076,G091106,Grama Panchayat,PALAKKAD,Nemmara,Nemmara,exact,0.955,22,22
+G09077,G091107,Grama Panchayat,PALAKKAD,Vandazhi,Vandazhy,fuzzy,1.000,20,20
+G09078,G091301,Grama Panchayat,PALAKKAD,Akathethara,Akathethara,exact,1.000,19,19
+G09079,G091302,Grama Panchayat,PALAKKAD,Malampuzha,Malampuzha,exact,1.000,14,14
+G09080,G091303,Grama Panchayat,PALAKKAD,Marutha Road,Marutharode,fuzzy,1.000,21,21
+G09081,G091304,Grama Panchayat,PALAKKAD,Puduppariyaram,Puduppariyaram,exact,1.000,23,23
+G09082,G091305,Grama Panchayat,PALAKKAD,Pudusserri,Pudusseri,fuzzy,0.958,24,24
+G09083,G091306,Grama Panchayat,PALAKKAD,Kodumba,Kodumba,exact,1.000,17,17
+G09084,G091201,Grama Panchayat,PALAKKAD,Alathur,Alathur,exact,1.000,18,18
+G09085,G091202,Grama Panchayat,PALAKKAD,Erimayoor,Erimayur,fuzzy,1.000,20,20
+G09086,G091203,Grama Panchayat,PALAKKAD,Kavassery,Kavassery,exact,0.947,19,19
+G09087,G091204,Grama Panchayat,PALAKKAD,Kizhakkanchery,Kizhakkancherry,fuzzy,1.000,24,24
+G09088,G091205,Grama Panchayat,PALAKKAD,Puthukode,Puducode,override,1.000,16,16
+G09089,G091206,Grama Panchayat,PALAKKAD,Tarur,Tarur,exact,1.000,18,18
+G09090,G091207,Grama Panchayat,PALAKKAD,Vadakkenchery,Vadakkancheri,fuzzy,0.955,22,22
+G09091,G091208,Grama Panchayat,PALAKKAD,Kannambra,Kannambra,exact,1.000,18,18
+G10001,G100104,Grama Panchayat,MALAPPURAM,Vazhikkadavu,Vazhikkadavu,exact,1.000,24,24
+G10002,G100106,Grama Panchayat,MALAPPURAM,Pothukal,Pothukkal,fuzzy,0.895,19,19
+G10003,G100105,Grama Panchayat,MALAPPURAM,Edakkara,Edakkara,exact,1.000,19,19
+G10004,G100103,Grama Panchayat,MALAPPURAM,Moothedam,Moothedam,exact,1.000,17,18
+G10005,G100102,Grama Panchayat,MALAPPURAM,Chungathara,Chungathara,exact,1.000,22,22
+G10006,G100101,Grama Panchayat,MALAPPURAM,Chaliyar,Chaliyar,exact,1.000,16,16
+G10008,G100402,Grama Panchayat,MALAPPURAM,Cherukavu,Cherukavu,exact,1.000,22,22
+G10009,G100405,Grama Panchayat,MALAPPURAM,Pallikkal,Pallickal,fuzzy,1.000,24,24
+G10010,G100406,Grama Panchayat,MALAPPURAM,Vazhayur,Vazhayur,exact,1.000,20,20
+G10011,G100407,Grama Panchayat,MALAPPURAM,Vazhakkad,Vazhakkad,exact,0.909,22,22
+G10012,G100408,Grama Panchayat,MALAPPURAM,Pulikkal,Pulikkal,exact,0.958,24,24
+G10014,G100409,Grama Panchayat,MALAPPURAM,Muthuvallur,Muthuvallur,exact,1.000,18,18
+G10015,G100401,Grama Panchayat,MALAPPURAM,Chelembra,Chelambra,fuzzy,1.000,21,21
+G10016,G100306,Grama Panchayat,MALAPPURAM,Wandoor,Wandoor,exact,1.000,24,24
+G10017,G100305,Grama Panchayat,MALAPPURAM,Thiruvali,Thiruvali,exact,1.000,19,19
+G10018,G100301,Grama Panchayat,MALAPPURAM,Mampad,Mampad,exact,1.000,22,22
+G10019,G100303,Grama Panchayat,MALAPPURAM,Porur,Porur,exact,0.947,19,19
+G10020,G100302,Grama Panchayat,MALAPPURAM,Pandikkad,Pandikkad,exact,0.958,24,24
+G10021,G100304,Grama Panchayat,MALAPPURAM,Thrikkalangode,Trikkalangode,fuzzy,1.000,24,24
+G10022,G100203,Grama Panchayat,MALAPPURAM,Kalikavu,Kalikavu,exact,0.955,22,22
+G10023,G100204,Grama Panchayat,MALAPPURAM,Chokkad,Chokkad,exact,1.000,20,20
+G10024,G100205,Grama Panchayat,MALAPPURAM,Karuvarakundu,Karuvarakundu,exact,1.000,24,24
+G10025,G100206,Grama Panchayat,MALAPPURAM,Thuvvur,Thuvvur,exact,1.000,19,19
+G10026,G100201,Grama Panchayat,MALAPPURAM,Amarambalam,Amarambalam,exact,1.000,22,22
+G10027,G100202,Grama Panchayat,MALAPPURAM,Karulai,Karulai,exact,0.941,17,17
+G10028,G100207,Grama Panchayat,MALAPPURAM,Edapatta,Edappatta,fuzzy,1.000,17,17
+G10029,G100507,Grama Panchayat,MALAPPURAM,Areacode,Areekkode,override,1.000,20,20
+G10030,G100501,Grama Panchayat,MALAPPURAM,Urangattiri,Urangattiri,exact,1.000,24,24
+G10031,G100502,Grama Panchayat,MALAPPURAM,Kavannur,Kavanur,fuzzy,1.000,23,23
+G10032,G100503,Grama Panchayat,MALAPPURAM,Keezhuparamba,Keezhuparamba,exact,1.000,16,16
+G10033,G100506,Grama Panchayat,MALAPPURAM,Kuzhimanna,Kuzhimanna,exact,0.952,21,21
+G10034,G100505,Grama Panchayat,MALAPPURAM,Cheacode,Chekkode,fuzzy,0.952,21,21
+G10035,G100504,Grama Panchayat,MALAPPURAM,Pulpetta,Pulpatta,fuzzy,1.000,24,24
+G10036,G100508,Grama Panchayat,MALAPPURAM,Edavanna,Edavanna,exact,1.000,24,24
+G10037,G100601,Grama Panchayat,MALAPPURAM,Anakayam,Anakkayam,fuzzy,1.000,24,24
+G10038,G100602,Grama Panchayat,MALAPPURAM,Morayur,Morayur,exact,1.000,21,21
+G10039,G100603,Grama Panchayat,MALAPPURAM,Ponmala,Ponmala,exact,0.905,21,21
+G10040,G100604,Grama Panchayat,MALAPPURAM,Pookkottur,Pookkottur,exact,1.000,23,23
+G10041,G100606,Grama Panchayat,MALAPPURAM,Othukkungal,Othukkungal,exact,1.000,23,23
+G10042,G100605,Grama Panchayat,MALAPPURAM,Kodur,Kodur,exact,0.913,23,23
+G10043,G100701,Grama Panchayat,MALAPPURAM,Aliparamba,Aliparamba,exact,0.958,24,24
+G10044,G100702,Grama Panchayat,MALAPPURAM,Elamkulam,Elamkulam,exact,1.000,18,18
+G10045,G100703,Grama Panchayat,MALAPPURAM,Melattur,Melattur,exact,1.000,18,18
+G10046,G100704,Grama Panchayat,MALAPPURAM,Keezhattur,Keezhattur,exact,1.000,22,22
+G10047,G100705,Grama Panchayat,MALAPPURAM,Thazhekkode,Thazhekode,fuzzy,0.833,24,24
+G10048,G100706,Grama Panchayat,MALAPPURAM,Vettathur,Vettathur,exact,1.000,19,19
+G10049,G100707,Grama Panchayat,MALAPPURAM,Pulamanthole,Pulamanthole,exact,1.000,23,23
+G10050,G100708,Grama Panchayat,MALAPPURAM,Angadippuram,Angadipuram,fuzzy,1.000,24,24
+G10051,G100801,Grama Panchayat,MALAPPURAM,Kuruva,Kuruva,exact,0.917,24,24
+G10052,G100805,Grama Panchayat,MALAPPURAM,Koottilangadi,Koottilangadi,exact,1.000,22,22
+G10053,G100806,Grama Panchayat,MALAPPURAM,Puzhakkatiri,Puzhakkattiri,fuzzy,1.000,19,19
+G10054,G100804,Grama Panchayat,MALAPPURAM,Moorkanad,Moorkkanad,fuzzy,1.000,22,22
+G10055,G100803,Grama Panchayat,MALAPPURAM,Makkaraparamba,Makkaraparamba,exact,1.000,15,15
+G10056,G100802,Grama Panchayat,MALAPPURAM,Mankada,Mankada,exact,1.000,21,21
+G10057,G100901,Grama Panchayat,MALAPPURAM,Athavanad,Athavanad,exact,1.000,24,24
+G10058,G100902,Grama Panchayat,MALAPPURAM,Edayur,Edayoor,fuzzy,0.955,22,22
+G10059,G100903,Grama Panchayat,MALAPPURAM,Irumbiliyum,Irimbiliyam,fuzzy,1.000,20,20
+G10060,G100904,Grama Panchayat,MALAPPURAM,Marakkara,Marakkara,exact,1.000,24,24
+G10061,G100905,Grama Panchayat,MALAPPURAM,Kuttippuram,Kuttippuram,exact,0.958,24,24
+G10063,G100907,Grama Panchayat,MALAPPURAM,Kalpakancheri,Kalpakancheri,exact,1.000,21,21
+G10065,G101206,Grama Panchayat,MALAPPURAM,Ponmundam,Ponmundam,exact,0.944,18,18
+G10066,G101201,Grama Panchayat,MALAPPURAM,Cheriyamundam,Cheriyamundam,exact,1.000,20,20
+G10067,G101202,Grama Panchayat,MALAPPURAM,Ozhoor,Ozhur,fuzzy,1.000,21,21
+G10068,G101207,Grama Panchayat,MALAPPURAM,Niramaruthoor,Niramaruthoor,exact,1.000,19,19
+G10069,G101203,Grama Panchayat,MALAPPURAM,Thanalur,Tanalur,fuzzy,0.958,24,24
+G10070,G101204,Grama Panchayat,MALAPPURAM,Valavannur,Valavannur,exact,0.810,21,21
+G10071,G101208,Grama Panchayat,MALAPPURAM,Perumanna Clari,Perumana klari,fuzzy,1.000,18,18
+G10072,G101001,Grama Panchayat,MALAPPURAM,Abdurehman Nagar,Abdul Rahiman Nagar,fuzzy,1.000,24,24
+G10073,G101003,Grama Panchayat,MALAPPURAM,Parappur,Parappur,exact,0.955,22,22
+G10074,G101004,Grama Panchayat,MALAPPURAM,Thennela,Thennala,fuzzy,1.000,19,19
+G10075,G101005,Grama Panchayat,MALAPPURAM,Vengara,Vengara,exact,1.000,24,24
+G10076,G101006,Grama Panchayat,MALAPPURAM,Kannamangalam,Kannamangalam,exact,1.000,24,24
+G10077,G101007,Grama Panchayat,MALAPPURAM,Oorakam,Uragam,override,0.947,19,19
+G10078,G101002,Grama Panchayat,MALAPPURAM,Edarikkode,Edarikode,fuzzy,1.000,18,18
+G10080,G101106,Grama Panchayat,MALAPPURAM,Nannambra,Nannambra,exact,1.000,24,24
+G10081,G101105,Grama Panchayat,MALAPPURAM,Moonniyur,Moonniyur,exact,0.958,24,24
+G10082,G101102,Grama Panchayat,MALAPPURAM,Thenhippalam,Thenhippalam,exact,1.000,20,20
+G10084,G101104,Grama Panchayat,MALAPPURAM,Vallikkunnu,Vallikkunnu,exact,1.000,24,24
+G10085,G101107,Grama Panchayat,MALAPPURAM,Peruvallur,Peruvallur,exact,1.000,21,21
+G10086,G101301,Grama Panchayat,MALAPPURAM,Purathur,Purathur,exact,1.000,20,20
+G10087,G101306,Grama Panchayat,MALAPPURAM,Mangalam,Mangalam,exact,1.000,21,21
+G10088,G101303,Grama Panchayat,MALAPPURAM,Thriprangode,Triprangode,fuzzy,0.958,24,24
+G10089,G101304,Grama Panchayat,MALAPPURAM,Vettom,Vettom,exact,1.000,22,22
+G10090,G101302,Grama Panchayat,MALAPPURAM,Thalakkad,Thalakkad,exact,1.000,22,22
+G10091,G101305,Grama Panchayat,MALAPPURAM,Thirunavaya,Thirunavaya,exact,1.000,24,24
+G10092,G101401,Grama Panchayat,MALAPPURAM,Thavanur,Tavanur,fuzzy,0.857,21,21
+G10093,G101402,Grama Panchayat,MALAPPURAM,Vattamkulam,Vattamkulam,exact,0.909,22,22
+G10094,G101403,Grama Panchayat,MALAPPURAM,Edappal,Edappal,exact,1.000,21,21
+G10095,G101404,Grama Panchayat,MALAPPURAM,Kalady,Kalady,exact,0.889,18,18
+G10096,G101501,Grama Panchayat,MALAPPURAM,Alamkode,Alamcode,fuzzy,0.857,21,21
+G10097,G101502,Grama Panchayat,MALAPPURAM,Maranchery,Maranchery,exact,1.000,22,22
+G10098,G101503,Grama Panchayat,MALAPPURAM,Nannamukku,Nannamukku,exact,0.842,19,19
+G10099,G101504,Grama Panchayat,MALAPPURAM,Perumbadappu,Perumpadappu,fuzzy,0.895,19,19
+G10100,G101505,Grama Panchayat,MALAPPURAM,Veliyancode,Veliyancode,exact,1.000,21,21
+G11001,G110101,Grama Panchayat,KOZHIKODE,Azhiyur,Azhiyur,exact,1.000,20,20
+G11002,G110102,Grama Panchayat,KOZHIKODE,Chorode,Chorode,exact,1.000,23,23
+G11003,G110103,Grama Panchayat,KOZHIKODE,Eramala,Eramala,exact,1.000,21,21
+G11004,G110104,Grama Panchayat,KOZHIKODE,Onchiyam,Onchiyam,exact,1.000,19,19
+G11005,G110201,Grama Panchayat,KOZHIKODE,Chekkiad,Chekkiad,exact,0.882,17,17
+G11006,G110203,Grama Panchayat,KOZHIKODE,Purameri,Purameri,exact,1.000,19,19
+G11007,G110204,Grama Panchayat,KOZHIKODE,Thuneri,Thuneri,exact,0.882,17,17
+G11008,G110205,Grama Panchayat,KOZHIKODE,Valayam,Valayam,exact,0.933,15,15
+G11009,G110206,Grama Panchayat,KOZHIKODE,Vanimel,Vanimel,exact,0.833,18,18
+G11010,G110202,Grama Panchayat,KOZHIKODE,Edacheri,Edacheri,exact,1.000,18,18
+G11011,G110207,Grama Panchayat,KOZHIKODE,Nadapuram,Nadapuram,exact,0.917,24,24
+G11012,G110301,Grama Panchayat,KOZHIKODE,Kunnummal,Kunnummal,exact,1.000,15,15
+G11013,G110306,Grama Panchayat,KOZHIKODE,Velom,Velom,exact,0.944,18,18
+G11014,G110302,Grama Panchayat,KOZHIKODE,Kayakkodi,Kayakkodi,exact,0.941,17,17
+G11015,G110303,Grama Panchayat,KOZHIKODE,Kavilumpara,Kavilumpara,exact,1.000,17,17
+G11016,G110304,Grama Panchayat,KOZHIKODE,Kuttiady,Kuttiadi,fuzzy,1.000,15,15
+G11017,G110305,Grama Panchayat,KOZHIKODE,Maruthonkara,Maruthomkara,fuzzy,0.933,15,15
+G11018,G110307,Grama Panchayat,KOZHIKODE,Naripatta,Narippatta,fuzzy,0.944,18,18
+G11019,G110401,Grama Panchayat,KOZHIKODE,Ayancheri,Ayancheri,exact,1.000,18,18
+G11020,G110402,Grama Panchayat,KOZHIKODE,Villiappally,Villiyappally,fuzzy,0.905,21,21
+G11021,G110403,Grama Panchayat,KOZHIKODE,Maniyur,Maniyur,exact,1.000,23,23
+G11022,G110404,Grama Panchayat,KOZHIKODE,Thiruvallur,Thiruvallur,exact,1.000,22,22
+G11023,G110501,Grama Panchayat,KOZHIKODE,Thurayur,Thurayur,exact,1.000,14,14
+G11024,G110502,Grama Panchayat,KOZHIKODE,Keezhariyur,Keezhariyur,exact,1.000,14,14
+G11025,G110503,Grama Panchayat,KOZHIKODE,Thikkodi,Thikkodi,exact,1.000,18,18
+G11027,G110505,Grama Panchayat,KOZHIKODE,Meppayur,Meppayur,exact,1.000,19,19
+G11028,G110601,Grama Panchayat,KOZHIKODE,Cheruvannur,Cheruvannur,exact,1.000,17,17
+G11029,G110602,Grama Panchayat,KOZHIKODE,Nochad,Nochad,exact,1.000,18,18
+G11030,G110603,Grama Panchayat,KOZHIKODE,Changaroth,Changaroth,exact,0.900,20,20
+G11031,G110604,Grama Panchayat,KOZHIKODE,Kayanna,Kayanna,exact,1.000,14,14
+G11032,G110605,Grama Panchayat,KOZHIKODE,Koothali,Koothali,exact,1.000,14,14
+G11033,G110606,Grama Panchayat,KOZHIKODE,Perambra,Perambra,exact,0.952,21,21
+G11034,G110607,Grama Panchayat,KOZHIKODE,Chakkittappara,Chakittapara,fuzzy,0.938,16,16
+G11035,G110701,Grama Panchayat,KOZHIKODE,Balussery,Balusseri,fuzzy,1.000,18,18
+G11036,G110702,Grama Panchayat,KOZHIKODE,Naduvannur,Naduvannur,exact,0.944,18,18
+G11037,G110704,Grama Panchayat,KOZHIKODE,Kottur,Kottur,exact,0.850,20,20
+G11038,G110703,Grama Panchayat,KOZHIKODE,Ulliyeri,Ulliyeri,exact,1.000,21,21
+G11039,G110705,Grama Panchayat,KOZHIKODE,Unnikulam,Unnikulum,fuzzy,0.958,24,24
+G11040,G110706,Grama Panchayat,KOZHIKODE,Panangad,Panangad,exact,1.000,21,21
+G11041,G110707,Grama Panchayat,KOZHIKODE,Koorachundu,Koorachundu,exact,0.929,14,14
+G11042,G110801,Grama Panchayat,KOZHIKODE,Chemanchery,Chemanachery,fuzzy,1.000,21,21
+G11043,G110802,Grama Panchayat,KOZHIKODE,Arikkulam,Arikulam,fuzzy,0.933,15,15
+G11044,G110803,Grama Panchayat,KOZHIKODE,Moodadi,Moodadi,exact,1.000,20,20
+G11045,G110804,Grama Panchayat,KOZHIKODE,Chengottukave,Chengottukavu,fuzzy,0.889,18,18
+G11046,G110805,Grama Panchayat,KOZHIKODE,Atholi,Atholi,exact,0.842,19,19
+G11047,G110901,Grama Panchayat,KOZHIKODE,Kakkodi,Kakkodi,exact,0.958,24,24
+G11048,G110902,Grama Panchayat,KOZHIKODE,Chelannur,Chelannur,exact,1.000,24,24
+G11049,G110903,Grama Panchayat,KOZHIKODE,Kakkur,Kakkur,exact,0.941,17,17
+G11050,G110904,Grama Panchayat,KOZHIKODE,Nanmanda,Nanmanda,exact,0.889,18,18
+G11051,G110905,Grama Panchayat,KOZHIKODE,Narikkuni,Narikkuni,exact,1.000,17,17
+G11052,G110906,Grama Panchayat,KOZHIKODE,Thalakkulathur,Thalakulathur,fuzzy,1.000,19,19
+G11053,G111001,Grama Panchayat,KOZHIKODE,Thiruvambady,Thiruvambadi,fuzzy,0.947,19,19
+G11054,G111002,Grama Panchayat,KOZHIKODE,Koodaranhi,Koodaranji,fuzzy,1.000,15,15
+G11055,G111003,Grama Panchayat,KOZHIKODE,Kizhakkoth,Kizhakkoth,exact,0.950,20,20
+G11056,G111004,Grama Panchayat,KOZHIKODE,Madavoor,Madavoor,exact,1.000,19,19
+G11058,G111006,Grama Panchayat,KOZHIKODE,Puthuppadi,Puthuppady,fuzzy,0.958,24,24
+G11059,G111007,Grama Panchayat,KOZHIKODE,Thamarassery,Thamarasseri,fuzzy,0.955,22,22
+G11060,G111008,Grama Panchayat,KOZHIKODE,Omasery,Omassery,fuzzy,0.955,22,22
+G11061,G111009,Grama Panchayat,KOZHIKODE,Kattippara,Kattippara,exact,1.000,17,17
+G11062,G111010,Grama Panchayat,KOZHIKODE,Kodenchery,Kodencheri,fuzzy,1.000,21,21
+G11063,G111101,Grama Panchayat,KOZHIKODE,Kodiyathur,Kodiyathur,exact,1.000,19,19
+G11064,G111102,Grama Panchayat,KOZHIKODE,Kuruvattur,Kuruvattur,exact,1.000,21,21
+G11065,G111103,Grama Panchayat,KOZHIKODE,Mavoor,Mavoor,exact,1.000,19,19
+G11066,G111104,Grama Panchayat,KOZHIKODE,Karasseri,Karasseri,exact,0.800,20,20
+G11067,G111105,Grama Panchayat,KOZHIKODE,Kunnamangalam,Kunnamangalam,exact,0.958,24,24
+G11068,G111106,Grama Panchayat,KOZHIKODE,Chathamangalam,Chathamangalam,exact,1.000,24,24
+G11070,G111108,Grama Panchayat,KOZHIKODE,Peruvayal,Peruvayal,exact,0.917,24,24
+G11071,G111109,Grama Panchayat,KOZHIKODE,Perumanna,Perumanna,exact,1.000,22,22
+G11072,G111201,Grama Panchayat,KOZHIKODE,KADALUNDI,Kadalundi,exact,1.000,24,24
+G11075,G111204,Grama Panchayat,KOZHIKODE,Olavanna,Olavanna,exact,1.000,24,24
+G12002,G120102,Grama Panchayat,WAYANAD,Vellamunda,Vellamunda,exact,1.000,24,24
+G12003,G120103,Grama Panchayat,WAYANAD,Thirunelly,Thirunelly,exact,1.000,19,19
+G12004,G120104,Grama Panchayat,WAYANAD,Thondernadu,Thondernad,fuzzy,0.941,17,17
+G12005,G120105,Grama Panchayat,WAYANAD,Edavaka,Edavaka,exact,0.857,21,21
+G12006,G120106,Grama Panchayat,WAYANAD,Thavinhal,Thavinhal,exact,0.913,23,23
+G12008,G120305,Grama Panchayat,WAYANAD,Noolpuzha,Noolpuzha,exact,1.000,19,19
+G12009,G120302,Grama Panchayat,WAYANAD,Nenmeni,Nenmeni,exact,1.000,24,24
+G12010,G120303,Grama Panchayat,WAYANAD,Ambalavayal,Ambalavayal,exact,1.000,22,22
+G12011,G120301,Grama Panchayat,WAYANAD,Meenangadi,Meenangadi,exact,1.000,21,21
+G12012,G120402,Grama Panchayat,WAYANAD,Vengappally,Vengappally,exact,1.000,14,14
+G12013,G120403,Grama Panchayat,WAYANAD,Vythiri,Vythiri,exact,1.000,15,15
+G12014,G120405,Grama Panchayat,WAYANAD,Pozhuthana,Pozhuthana,exact,0.933,15,15
+G12015,G120406,Grama Panchayat,WAYANAD,Thariode,Thariyode,fuzzy,1.000,14,14
+G12016,G120408,Grama Panchayat,WAYANAD,Meppadi,Meppadi,exact,0.913,23,23
+G12017,G120409,Grama Panchayat,WAYANAD,Muppainadu,Muppainadu,exact,0.941,17,17
+G12018,G120401,Grama Panchayat,WAYANAD,Kottathara,Kottathara,exact,1.000,14,14
+G12019,G120404,Grama Panchayat,WAYANAD,Muttil,Mutil,fuzzy,0.909,22,22
+G12020,G120407,Grama Panchayat,WAYANAD,Padinjarathara,Padinharethara,fuzzy,1.000,18,18
+G12021,G120201,Grama Panchayat,WAYANAD,Panamaram,Panamaram,exact,0.917,24,24
+G12022,G120205,Grama Panchayat,WAYANAD,Kaniyambetta,Kaniambetta,fuzzy,1.000,21,21
+G12023,G120202,Grama Panchayat,WAYANAD,Poothady,Poothadi,fuzzy,0.957,23,23
+G12024,G120204,Grama Panchayat,WAYANAD,Pulpally,Pulpally,exact,1.000,21,21
+G12025,G120203,Grama Panchayat,WAYANAD,Mullankolly,Mullamkolly,fuzzy,0.947,19,19
+G13001,G130201,Grama Panchayat,KANNUR,Cheruthazham,Cheruthazham,exact,1.000,19,19
+G13002,G130203,Grama Panchayat,KANNUR,Madayi,Madayi,exact,1.000,22,22
+G13003,G130202,Grama Panchayat,KANNUR,Ezhome,Ezhome,exact,1.000,15,15
+G13004,G130205,Grama Panchayat,KANNUR,Cherukunnu,Cherukunnu,exact,1.000,14,14
+G13005,G130204,Grama Panchayat,KANNUR,Mattool,Mattool,exact,0.895,19,19
+G13006,G130207,Grama Panchayat,KANNUR,Kannapuram,Kannapuram,exact,1.000,15,15
+G13007,G130206,Grama Panchayat,KANNUR,Kalliassery,Kalliasseri,fuzzy,1.000,20,20
+G13008,G130208,Grama Panchayat,KANNUR,Narath,Narath,exact,0.944,18,18
+G13009,G130107,Grama Panchayat,KANNUR,Cherupuzha,Cherupuzha,exact,1.000,20,20
+G13010,G130106,Grama Panchayat,KANNUR,Peringome Vayakkara,Peringome Vayakkara,exact,1.000,19,19
+G13011,G130105,Grama Panchayat,KANNUR,Eramam- Kuttoor,Eramam Kuttoor,exact,1.000,19,19
+G13012,G130104,Grama Panchayat,KANNUR,Kankole- Alapadamba,Kangole Alapadamba,fuzzy,1.000,15,15
+G13013,G130103,Grama Panchayat,KANNUR,Karivellur- Peralam,Karivellur Peralam,exact,1.000,16,16
+G13014,G130101,Grama Panchayat,KANNUR,Kunhimangalam,Kunhimangalam,exact,1.000,15,15
+G13015,G130102,Grama Panchayat,KANNUR,Ramanthali,Ramanthali,exact,1.000,18,18
+G13016,G130307,Grama Panchayat,KANNUR,Udayagiri,Udayagiri,exact,1.000,15,15
+G13017,G130308,Grama Panchayat,KANNUR,Alakode,Alakode,exact,0.952,21,21
+G13018,G130306,Grama Panchayat,KANNUR,Naduvil,Naduvil,exact,0.950,20,20
+G13019,G130305,Grama Panchayat,KANNUR,Chapparapadavu,Chapparapadavu,exact,0.950,20,20
+G13020,G130302,Grama Panchayat,KANNUR,Chengalayi,Chengalai,fuzzy,0.950,20,20
+G13021,G130303,Grama Panchayat,KANNUR,Kurumathoor,Kurumathur,fuzzy,1.000,20,20
+G13022,G130304,Grama Panchayat,KANNUR,Pariyaram,Pariyaram,exact,1.000,21,21
+G13023,G130301,Grama Panchayat,KANNUR,Pattuvam,Pattuvam,exact,1.000,14,14
+G13024,G130309,Grama Panchayat,KANNUR,Kadannappalli- Panappuzha,Kadannapally Panapuzha,fuzzy,1.000,16,16
+G13025,G130402,Grama Panchayat,KANNUR,Irikkur,Irikkur,exact,1.000,14,14
+G13026,G130401,Grama Panchayat,KANNUR,Eruvessy,Eruvassey,fuzzy,1.000,15,15
+G13027,G130403,Grama Panchayat,KANNUR,Malappattam,Malapattom,fuzzy,1.000,14,14
+G13028,G130404,Grama Panchayat,KANNUR,Payyavoor,Payyavoor,exact,1.000,17,17
+G13029,G130406,Grama Panchayat,KANNUR,Mayyil,Mayyil,exact,1.000,19,19
+G13031,G130408,Grama Panchayat,KANNUR,Padiyoor Kalliad,Padiyur kalliad,fuzzy,0.938,16,16
+G13032,G130409,Grama Panchayat,KANNUR,Ulikkal,Ulikkal,exact,0.955,22,22
+G13033,G130405,Grama Panchayat,KANNUR,Kuttiattoor,Kuttiattur,fuzzy,0.944,18,18
+G13034,G130501,Grama Panchayat,KANNUR,Chirakkal,Chirakkal,exact,1.000,24,24
+G13037,G130504,Grama Panchayat,KANNUR,Valapattanam,Valapattanam,exact,1.000,14,14
+G13038,G130505,Grama Panchayat,KANNUR,Azheekode,Azhikode,fuzzy,0.958,24,24
+G13039,G130506,Grama Panchayat,KANNUR,Pappinissery,Pappinisseri,fuzzy,1.000,22,22
+G13040,G130608,Grama Panchayat,KANNUR,Kolachery,Kolacherry,fuzzy,1.000,19,19
+G13041,G130606,Grama Panchayat,KANNUR,Munderi,Munderi,exact,0.909,22,22
+G13045,G130605,Grama Panchayat,KANNUR,Chembilode,Chembilode,exact,0.952,21,21
+G13046,G130603,Grama Panchayat,KANNUR,Kadambur,Kadambur,exact,1.000,15,15
+G13047,G130607,Grama Panchayat,KANNUR,Peralassery,Peralasseri,fuzzy,0.895,19,19
+G13048,G130705,Grama Panchayat,KANNUR,Muzhappilangad,Muzhappilangad,exact,0.941,17,17
+G13049,G130707,Grama Panchayat,KANNUR,Vengad,Vengad,exact,0.913,23,23
+G13050,G130701,Grama Panchayat,KANNUR,Dharmadam,Dharmadom,fuzzy,0.950,20,20
+G13051,G130702,Grama Panchayat,KANNUR,Eranholi,Eranholi,exact,0.944,18,18
+G13052,G130703,Grama Panchayat,KANNUR,Pinarayi,Pinarayi,exact,0.952,21,21
+G13053,G130704,Grama Panchayat,KANNUR,New Mahe,New Mahi,fuzzy,0.857,14,14
+G13054,G130706,Grama Panchayat,KANNUR,Ancharakandy,Ancharakandy,exact,1.000,17,17
+G13055,G130901,Grama Panchayat,KANNUR,Thripangottoor,Triprangottur,fuzzy,0.947,19,19
+G13056,G130902,Grama Panchayat,KANNUR,Chittariparamba,Chittariparamba,exact,0.941,17,17
+G13057,G130905,Grama Panchayat,KANNUR,Pattiam,Pattiam,exact,0.950,20,20
+G13058,G130903,Grama Panchayat,KANNUR,Kunnothuparamba,Kunnathuparamba,fuzzy,0.826,23,23
+G13059,G130904,Grama Panchayat,KANNUR,Mangattidam,Mangattidam,exact,0.905,21,21
+G13060,G130906,Grama Panchayat,KANNUR,Kottayam,Kottayam,exact,0.867,15,15
+G13061,G130802,Grama Panchayat,KANNUR,chockli,Chokli,fuzzy,1.000,19,19
+G13065,G130806,Grama Panchayat,KANNUR,Panniyannur,Panniyannur,exact,1.000,16,16
+G13066,G130805,Grama Panchayat,KANNUR,Mokeri,Mokeri,exact,1.000,15,15
+G13067,G130801,Grama Panchayat,KANNUR,Kadirur,Kadirur,exact,1.000,20,20
+G13068,G131001,Grama Panchayat,KANNUR,Aralam,Aralam,exact,1.000,19,19
+G13069,G131002,Grama Panchayat,KANNUR,Ayyankunnu,Ayyankunnu,exact,0.875,16,16
+G13070,G131003,Grama Panchayat,KANNUR,Keezhallur,Keezhallur,exact,1.000,16,16
+G13071,G131004,Grama Panchayat,KANNUR,Thillankeri,Thilankeri,fuzzy,0.929,14,14
+G13072,G131005,Grama Panchayat,KANNUR,Koodali,Koodali,exact,0.950,20,20
+G13073,G131006,Grama Panchayat,KANNUR,Payam,Payam,exact,0.947,19,19
+G13075,G131101,Grama Panchayat,KANNUR,Kanichar,Kanichar,exact,0.929,14,14
+G13076,G131102,Grama Panchayat,KANNUR,Kelakam,Kelakom,fuzzy,1.000,14,14
+G13077,G131103,Grama Panchayat,KANNUR,Kottiyoor,Kottiyoor,exact,1.000,14,14
+G13078,G131104,Grama Panchayat,KANNUR,Muzhakkunnu,Muzhakkunnu,exact,0.812,16,16
+G13079,G131105,Grama Panchayat,KANNUR,Kolayad,Kolayad,exact,1.000,15,15
+G13080,G131106,Grama Panchayat,KANNUR,Malur,Malur,exact,1.000,16,16
+G13081,G131107,Grama Panchayat,KANNUR,Peravoor,Peravoor,exact,1.000,17,18
+G14001,G140202,Grama Panchayat,KASARGOD,Kumbadaje,Kumbadaje,exact,1.000,14,14
+G14002,G140201,Grama Panchayat,KASARGOD,Bellur,Belloor,fuzzy,1.000,14,14
+G14003,G140204,Grama Panchayat,KASARGOD,Karadka,Karadka,exact,1.000,16,16
+G14004,G140203,Grama Panchayat,KASARGOD,Muliyar,Muliyar,exact,1.000,18,18
+G14005,G140205,Grama Panchayat,KASARGOD,Delampady,Delampady,exact,0.941,17,17
+G14006,G140206,Grama Panchayat,KASARGOD,Bedadka,Bedaduka,fuzzy,1.000,19,19
+G14007,G140207,Grama Panchayat,KASARGOD,Kuttikkol,Kuttikol,fuzzy,1.000,17,17
+G14008,G140105,Grama Panchayat,KASARGOD,Manjeshwar,Manjewswaram,fuzzy,0.958,24,24
+G14009,G140102,Grama Panchayat,KASARGOD,Vorkady,Vorkady,exact,1.000,18,18
+G14010,G140104,Grama Panchayat,KASARGOD,Meenja,Meenja,exact,0.824,17,17
+G14011,G140101,Grama Panchayat,KASARGOD,Mangalpady,Mangalpady,exact,0.875,24,24
+G14012,G140106,Grama Panchayat,KASARGOD,Paivalike,Paivalike,exact,1.000,21,21
+G14013,G140103,Grama Panchayat,KASARGOD,Puthige,Puthige,exact,1.000,16,16
+G14014,G140107,Grama Panchayat,KASARGOD,Enmakaje,Enmakaje,exact,1.000,18,18
+G14015,G140306,Grama Panchayat,KASARGOD,Kumbla,Kumbala,fuzzy,1.000,24,24
+G14016,G140305,Grama Panchayat,KASARGOD,Badiadka,Badiadka,exact,0.952,21,21
+G14017,G140304,Grama Panchayat,KASARGOD,Mogralputhur,Mogral Puthur,exact,1.000,17,17
+G14018,G140303,Grama Panchayat,KASARGOD,Madhur,Madhur,exact,1.000,24,24
+G14019,G140302,Grama Panchayat,KASARGOD,Chemnad,Chemnad,exact,0.958,24,24
+G14020,G140301,Grama Panchayat,KASARGOD,Chengala,Chengala,exact,0.958,24,24
+G14021,G140401,Grama Panchayat,KASARGOD,Udma,Udma,exact,1.000,23,23
+G14022,G140404,Grama Panchayat,KASARGOD,Pallikkara,Pallikkara,exact,0.958,24,24
+G14023,G140402,Grama Panchayat,KASARGOD,Ajanur,Ajanoor,fuzzy,1.000,24,24
+G14024,G140405,Grama Panchayat,KASARGOD,Pullur-Periya,Pullurperiya,exact,0.947,19,19
+G14025,G140403,Grama Panchayat,KASARGOD,Madikai,Madikkai,fuzzy,1.000,16,16
+G14026,G140502,Grama Panchayat,KASARGOD,Kodom -Belur,Kodombellur,fuzzy,0.952,21,21
+G14027,G140504,Grama Panchayat,KASARGOD,Kallar,Kallar,exact,1.000,15,15
+G14028,G140503,Grama Panchayat,KASARGOD,Panathady,Panathady,exact,0.941,17,17
+G14029,G140501,Grama Panchayat,KASARGOD,Balal,Balal,exact,0.882,17,17
+G14030,G140507,Grama Panchayat,KASARGOD,Kinanoor - Karindalam,Kinanoor Karinthalam,fuzzy,1.000,19,19
+G14031,G140506,Grama Panchayat,KASARGOD,West Eleri,West Eleri,exact,1.000,19,19
+G14032,G140505,Grama Panchayat,KASARGOD,East Eleri,East Eleri,exact,1.000,18,18
+G14033,G140602,Grama Panchayat,KASARGOD,Kayyur -  Cheemeni,Kayyur Cheemeni,exact,0.941,17,17
+G14034,G140601,Grama Panchayat,KASARGOD,Cheruvathur,Cheruvathur,exact,1.000,18,18
+G14035,G140605,Grama Panchayat,KASARGOD,Valiyaparamba,Valiyaparamba,exact,1.000,14,14
+G14036,G140606,Grama Panchayat,KASARGOD,Padne,Padne,exact,0.938,16,16
+G14037,G140603,Grama Panchayat,KASARGOD,Pilicode,Pilicode,exact,1.000,18,18
+G14038,G140604,Grama Panchayat,KASARGOD,Trikaripur,Thrikkaripur,fuzzy,0.957,23,23
+M01001,M010400,Municipality,THIRUVANANTHAPURAM,Neyyattinkara,Neyyattinkara,exact,0.957,46,46
+M01002,M010300,Municipality,THIRUVANANTHAPURAM,Nedumangad,Nedumangad,exact,0.976,42,42
+M01003,M010200,Municipality,THIRUVANANTHAPURAM,Attingal,Attingal,exact,1.000,32,32
+M01004,M010100,Municipality,THIRUVANANTHAPURAM,Varkala,Varkala,exact,1.000,34,34
+M02005,M020200,Municipality,KOLLAM,Paravoor,Paravur,fuzzy,0.969,32,32
+M02006,M020300,Municipality,KOLLAM,Punalur,Punalur,exact,0.972,36,36
+M02007,M020100,Municipality,KOLLAM,Karunagappally,Karunagappally,exact,1.000,37,37
+M02087,M020400,Municipality,KOLLAM,Kottarakkara,Kottarakara,fuzzy,1.000,30,30
+M03008,M030100,Municipality,PATHANAMTHITTA,Adoor,Adoor,exact,1.000,29,29
+M03009,M030300,Municipality,PATHANAMTHITTA,Pathanamthitta,Pathanamthitta,exact,1.000,33,33
+M03010,M030200,Municipality,PATHANAMTHITTA,Thiruvalla,Thiruvalla,exact,0.949,39,39
+M03061,M030400,Municipality,PATHANAMTHITTA,Pandalam,Pandalam,exact,1.000,34,34
+M04011,M040400,Municipality,ALAPPUZHA,Kayamkulam,Kayamkulam,exact,0.889,45,45
+M04012,M040200,Municipality,ALAPPUZHA,Mavelikkara,Mavelikkara,exact,0.964,28,28
+M04013,M040100,Municipality,ALAPPUZHA,Chengannur,Chengannur,exact,0.926,27,27
+M04014,M040500,Municipality,ALAPPUZHA,Alappuzha,Alappuzha,exact,0.943,53,53
+M04015,M040300,Municipality,ALAPPUZHA,Cherthala,Cherthala,exact,0.972,36,36
+M04062,M040600,Municipality,ALAPPUZHA,Harippad,Haripad,fuzzy,0.967,30,30
+M05016,M050300,Municipality,KOTTAYAM,Changanassery,Changanassery,exact,0.838,37,37
+M05017,M050400,Municipality,KOTTAYAM,Kottayam,Kottayam,exact,0.981,53,53
+M05018,M050200,Municipality,KOTTAYAM,Vaikom,Vaikom,exact,1.000,27,27
+M05019,M050100,Municipality,KOTTAYAM,Palai,Pala,fuzzy,0.962,26,26
+M05063,M050500,Municipality,KOTTAYAM,Ettumanoor,Ettumanoor,exact,1.000,36,36
+M05064,M050600,Municipality,KOTTAYAM,Erattupetta,Erattupetta,exact,0.966,29,29
+M06020,M060100,Municipality,IDUKKI,Thodupuzha,Thodupuzha,exact,0.947,38,38
+M06065,M060200,Municipality,IDUKKI,Kattappana,Kattappana,exact,0.971,35,35
+M07021,M070400,Municipality,ERNAKULAM,Thrippunithura,Tripunithura,fuzzy,0.962,53,53
+M07022,M070500,Municipality,ERNAKULAM,Muvattupuzha,Muvattupuzha,exact,1.000,30,30
+M07023,M070200,Municipality,ERNAKULAM,Kothamangalam,Kothamangalam,exact,1.000,33,33
+M07024,M070700,Municipality,ERNAKULAM,Perumbavoor,Perumbavoor,exact,0.966,29,29
+M07025,M070800,Municipality,ERNAKULAM,Aluva,Aluva,exact,1.000,26,26
+M07026,M070100,Municipality,ERNAKULAM,Kalamassery,Kalamassery,exact,0.935,46,46
+M07027,M070600,Municipality,ERNAKULAM,North Paravur,North Paravur,exact,1.000,30,30
+M07028,M070300,Municipality,ERNAKULAM,Angamaly,Angamaly,exact,0.935,31,31
+M07029,M071000,Municipality,ERNAKULAM,Eloor,Eloor,exact,1.000,32,32
+M07030,M070900,Municipality,ERNAKULAM,Thrikkakara,Thrikkakara,exact,1.000,48,48
+M07031,M071100,Municipality,ERNAKULAM,Maradu,Maradu,exact,0.971,35,35
+M07066,M071200,Municipality,ERNAKULAM,Piravom,Piravom,exact,1.000,28,28
+M07067,M071300,Municipality,ERNAKULAM,Koothattukulam,Koothattukulam,exact,1.000,26,26
+M08032,M080400,Municipality,THRISSUR,Chalakudy,Chalakkudy,fuzzy,1.000,37,37
+M08033,M080500,Municipality,THRISSUR,Irinjalakuda,Irinjalakuda,exact,0.977,43,43
+M08034,M080300,Municipality,THRISSUR,Kodungallur,Kodungallur,exact,0.978,46,46
+M08035,M080200,Municipality,THRISSUR,Chavakkad,Chavakkad,exact,0.970,33,33
+M08036,M080100,Municipality,THRISSUR,Guruvayoor,Guruvayur,fuzzy,0.913,46,46
+M08037,M080600,Municipality,THRISSUR,Kunnamkulam,Kunnamkulam,exact,0.923,39,39
+M08068,M080700,Municipality,THRISSUR,Vadakkancherry,Wadakanchery,fuzzy,1.000,42,42
+M09038,M090200,Municipality,PALAKKAD,Shornur,Shornur,exact,0.829,35,35
+M09039,M090100,Municipality,PALAKKAD,Ottappalam,Ottappalam,exact,1.000,39,39
+M09040,M090400,Municipality,PALAKKAD,Palakkad,Palakkad,exact,1.000,53,53
+M09041,M090300,Municipality,PALAKKAD,Chittur-Thathamangalam,Chittoor Thathamangalam,fuzzy,1.000,30,30
+M09069,M090500,Municipality,PALAKKAD,Pattambi,Pattambi,exact,1.000,29,29
+M09070,M090600,Municipality,PALAKKAD,Cherupulassery,Cherpulassery,fuzzy,0.939,33,33
+M09071,M090700,Municipality,PALAKKAD,Mannarkkad,Mannarkad,fuzzy,1.000,30,30
+M10042,M100200,Municipality,MALAPPURAM,Ponnani,Ponnani,exact,1.000,53,53
+M10043,M100400,Municipality,MALAPPURAM,Tirur,Tirur,exact,0.975,40,40
+M10044,M100100,Municipality,MALAPPURAM,Perinthalmanna,Perinthalmanna,exact,0.919,37,37
+M10045,M100500,Municipality,MALAPPURAM,Malappuram,Malappuram,exact,0.956,45,45
+M10046,M100300,Municipality,MALAPPURAM,Manjeri,Manjeri,exact,0.943,53,53
+M10047,M100700,Municipality,MALAPPURAM,Kottakkal,Kottakkal,exact,0.971,35,35
+M10048,M100600,Municipality,MALAPPURAM,Nilambur,Nilambur,exact,0.972,36,36
+M10072,M100900,Municipality,MALAPPURAM,Thanoor,Tanur,override,0.911,45,45
+M10073,M101000,Municipality,MALAPPURAM,Parappanangadi,Parappanangadi,exact,0.978,46,46
+M10074,M101100,Municipality,MALAPPURAM,Valanchery,Valanchery,exact,1.000,34,34
+M10075,M101200,Municipality,MALAPPURAM,Tirurangadi,Tirurangadi,exact,0.975,40,40
+M10088,M100800,Municipality,MALAPPURAM,Kondotty,Kondotty,exact,1.000,41,41
+M11049,M110200,Municipality,KOZHIKODE,Koilandy,Koyilandy,fuzzy,0.978,46,46
+M11050,M110100,Municipality,KOZHIKODE,Vadakara,Vadakara,exact,1.000,48,48
+M11076,M110400,Municipality,KOZHIKODE,Payyoli,Payyoli,exact,0.973,37,37
+M11077,M110500,Municipality,KOZHIKODE,Ramanattukara,Ramanattukara,exact,0.969,32,32
+M11078,M110600,Municipality,KOZHIKODE,Koduvally,Koduvally,exact,1.000,37,37
+M11079,M110700,Municipality,KOZHIKODE,Mukkam,Mukkam,exact,1.000,34,34
+M11080,M110300,Municipality,KOZHIKODE,Faroke,Feroke,fuzzy,0.923,39,39
+M12051,M120100,Municipality,WAYANAD,Kalpetta,Kalpetta,exact,0.967,30,30
+M12081,M120200,Municipality,WAYANAD,Mananthavadi,Mananthavady,fuzzy,0.973,37,37
+M12082,M120300,Municipality,WAYANAD,Sulthanbethery,Sulthan Bathery,fuzzy,1.000,36,36
+M13053,M130200,Municipality,KANNUR,Taliparamba,Thaliparamba,fuzzy,0.971,35,35
+M13054,M130300,Municipality,KANNUR,Koothuparamba,Koothuparamba,exact,1.000,29,29
+M13055,M130500,Municipality,KANNUR,Thalassery,Thalassery,exact,0.981,53,53
+M13056,M130400,Municipality,KANNUR,Payyannur,Payyannur,exact,0.935,46,46
+M13083,M130800,Municipality,KANNUR,Iritty,Iritty,exact,0.941,34,34
+M13084,M130900,Municipality,KANNUR,Panoor,Panoor,exact,0.902,41,41
+M13085,M131000,Municipality,KANNUR,Sreekandapuram,Sreekandapuram,exact,0.968,31,31
+M13086,M130700,Municipality,KANNUR,Anthoor,Anthoor,exact,0.966,29,29
+M14058,M140100,Municipality,KASARGOD,Kanhangad,Kanhangad,exact,1.000,47,47
+M14059,M140200,Municipality,KASARGOD,Kasaragod,Kasaragod,exact,1.000,39,39
+M14060,M140300,Municipality,KASARGOD,Nileshwar,Nileshwar,exact,1.000,34,34

@@ -295,3 +295,63 @@ def test_a_side_with_ward_names_still_can_contradict():
     )
     assert r.resolved_count == 0
     assert len(r.rejected) == 1
+
+
+def test_malayalam_ward_names_are_incomparable_not_disagreeing():
+    """A name that normalises to nothing cannot disagree with anything.
+
+    `normalize` keeps only [A-Z0-9], so Malayalam ward names reduce to the empty
+    string and fail every comparison -- including against their own correct
+    counterpart. Block Panchayat B05049 (Pampady) stores its division names that
+    way, and scoring them 0.0 rejected a correct pairing.
+    """
+    malayalam = ("പാമ്പാടി", "കൂരോപ്പട", "മണർകാട്", "അയർക്കുന്നം", "പനച്ചിക്കാട്")
+    r = build_crosswalk(
+        [ours("B05049", "Pampady", wards=malayalam)],
+        [theirs("Kottayam::Pampady", "Pampady", wards=WARDS_A)],
+    )
+    assert r.resolved_count == 1
+    assert not r.rejected
+
+
+def test_agreement_denominator_ignores_incomparable_names():
+    """Half the names unreadable must not halve the score."""
+    mixed = ("Puthankada", "Kollayil", "പാമ്പാടി", "മണർകാട്")
+    assert ward_agreement(mixed, ("Puthankada", "Kollayil")) == 1.0
+
+
+def test_latin_names_that_genuinely_disagree_are_still_rejected():
+    """The relaxation must not disarm the gate where a comparison was possible."""
+    r = build_crosswalk(
+        [ours("G02003", "Clappana", wards=WARDS_A)],
+        [theirs("G020103", "Clappana", wards=WARDS_B)],
+    )
+    assert r.resolved_count == 0 and len(r.rejected) == 1
+
+
+def test_an_override_is_not_re_litigated_by_the_gate():
+    """A human decision outranks the heuristic it exists to overrule.
+
+    Block Panchayat B10109 (Areacode/Areekkode) was paired by hand and then
+    rejected at 0.474 against the 0.5 threshold, so the override achieved nothing.
+    The gate is for catching bad *automatic* pairings.
+    """
+    r = build_crosswalk(
+        [ours("B10109", "Areacode", wards=WARDS_A)],
+        [theirs("Malappuram::Areekkode", "Areekkode", wards=WARDS_B)],
+        overrides={"B10109": "Malappuram::Areekkode"},
+    )
+    assert r.resolved_count == 1
+    assert not r.rejected
+    assert r.matches[0].method == "override"
+    # The evidence is still recorded, so a reviewer sees how thin it was.
+    assert r.matches[0].ward_agreement == 0.0
+
+
+def test_a_fuzzy_match_with_the_same_evidence_is_still_rejected():
+    """Only the override is exempt -- the same pair unaided must still fail."""
+    r = build_crosswalk(
+        [ours("B10109", "Areacode", wards=WARDS_A)],
+        [theirs("Malappuram::Areacode", "Areacode", wards=WARDS_B)],
+    )
+    assert r.resolved_count == 0 and len(r.rejected) == 1

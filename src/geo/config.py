@@ -51,6 +51,11 @@ class Paths:
         return self.root / "final" / "geo"
 
     @property
+    def maps(self) -> Path:
+        """Rendered choropleth PNGs, beside the layers they are rendered from."""
+        return self.final / "maps"
+
+    @property
     def reference(self) -> Path:
         """Hand-maintained crosswalks and overrides. Committed, unlike everything else."""
         return self.root / "reference" / "geo"

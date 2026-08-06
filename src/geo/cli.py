@@ -62,18 +62,62 @@ def fetch(cfg: Paths) -> None:
     raise click.ClickException("not implemented yet -- see Units 3 and 7 of the plan")
 
 
+def _today() -> str:
+    from datetime import UTC, datetime
+
+    return datetime.now(UTC).date().isoformat()
+
+
+def _report(result, *, wrote: bool) -> None:
+    for key, value in result.counts.items():
+        click.echo(f"  {key:34} {value:>7,}")
+    if wrote:
+        for path in result.written:
+            size = path.stat().st_size / 1e6
+            click.echo(f"  wrote {path.name:34} {size:>7.2f} MB")
+    if result.problems:
+        click.echo()
+        for problem in result.problems:
+            click.echo(f"  FAIL {problem}", err=True)
+        raise SystemExit(1)
+    click.echo("\n  gates passed")
+
+
 @main.command()
+@click.option("--fetched", default=None, help="Date the tiles were fetched (provenance).")
 @click.pass_obj
-def validate(cfg: Paths) -> None:
+def validate(cfg: Paths, fetched: str | None) -> None:
     """Build in memory and gate it, writing nothing."""
-    raise click.ClickException("not implemented yet -- see Units 4-8 of the plan")
+    from geo.build.pipeline import run
+
+    click.echo(f"validating from {cfg.root}")
+    # tiers=False: the tier layers emit as they build, and a validate must not write.
+    _report(run(cfg, fetched=fetched or _today(), built=_today(), write=False, tiers=False),
+            wrote=False)
+
+
+@main.command()
+@click.option("--fetched", default=None, help="Date the tiles were fetched (provenance).")
+@click.pass_obj
+def build(cfg: Paths, fetched: str | None) -> None:
+    """Gate, then write every layer."""
+    from geo.build.pipeline import run
+
+    click.echo(f"building into {cfg.final}")
+    _report(run(cfg, fetched=fetched or _today(), built=_today(), write=True), wrote=True)
 
 
 @main.command()
 @click.pass_obj
-def build(cfg: Paths) -> None:
-    """Gate, then write layers, reports and a manifest."""
-    raise click.ClickException("not implemented yet -- see Units 4-8 of the plan")
+def maps(cfg: Paths) -> None:
+    """Render the choropleth PNGs from the emitted layers."""
+    from geo.build.maps import render_all
+
+    if not (cfg.final / "wards_2025.geojson").exists():
+        raise click.ClickException(f"no layers in {cfg.final} -- run `geo build` first")
+    click.echo(f"rendering into {cfg.maps}")
+    for path in render_all(cfg):
+        click.echo(f"  {path.name:40} {path.stat().st_size / 1e6:>6.2f} MB")
 
 
 if __name__ == "__main__":

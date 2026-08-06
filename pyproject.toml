@@ -41,9 +41,10 @@ dependencies = [
     # Elections data_merge (PDF text extraction; no network dependency)
     "pypdf>=5.0",
 
-    # Boundary geometry (src/geo): vector-tile decode and polygon assembly
+    # Boundary geometry (src/geo): vector-tile decode, polygon assembly, map render
     "mapbox-vector-tile>=2.0",
     "shapely>=2.0",
+    "matplotlib>=3.8",
 ]
 
 [project.scripts]
