@@ -87,8 +87,16 @@ def derive_winner(
             return WinnerResult(best.candidate_id, True, tied_ids, "member_name")
 
     if member_party:
-        for c in leaders:
-            if parties_agree(c.party, member_party):
-                return WinnerResult(c.candidate_id, True, tied_ids, "member_party")
+        # Exactly one tied candidate may carry the member's party. Two would
+        # make party useless as a discriminator, and returning whichever came
+        # first would award the ward on list order -- the same flaw the name
+        # branch above avoids. Party is weak evidence at the best of times: a
+        # handful of fronts contest every ward, and for 2025 it is the *only*
+        # evidence, because the SEC publishes candidate names in Malayalam
+        # while WIYR publishes members in English and nothing here
+        # transliterates. It has to be unambiguous to count.
+        matching = [c for c in leaders if parties_agree(c.party, member_party)]
+        if len(matching) == 1:
+            return WinnerResult(matching[0].candidate_id, True, tied_ids, "member_party")
 
     return WinnerResult(None, True, tied_ids, "undecidable")
