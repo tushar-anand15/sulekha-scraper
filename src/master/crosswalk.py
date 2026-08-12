@@ -1,0 +1,669 @@
+"""Building ``core.local_body`` -- the spine every other table hangs off.
+
+Four sources identify a local body four different ways:
+
+  elections  ``lb_code``                        (the spine)
+  sakarma    ``lb.id``, Malayalam name only
+  sulekha    ``(district_index, lb_index)`` per year, English name only
+  geo        KSMART / OSM codes, already crosswalked to ``lb_code``
+
+The spine is ``lb_code``, because it is the only identifier that is stable, that
+someone has already verified against ward names, and that the geometry is
+already keyed on.
+
+Matching runs a three-step cascade inside each (district, body type) group, and
+records which step produced each match so the weak ones stay visible:
+
+  ``exact``        normalised name equality
+  ``elimination``  one unmatched body left on each side of the group -- forced
+  ``similarity``   greedy best-first on SequenceMatcher ratio, above a threshold
+  ``override``     hand-recorded in ``crosswalk_overrides.csv``, with a reason
+
+Elimination matters more than fuzzy matching here. Kerala's districts hold 40-80
+Grama Panchayats each; once the exact pass has taken most of a group, the
+survivors are often forced with no guesswork at all. Transliteration and
+Malayalam spelling drift make raw similarity scores unreliable -- 'Oorakam'
+against 'Uragam' scores worse than two genuinely different neighbours.
+"""
+
+from __future__ import annotations
+
+import csv
+import json
+import sqlite3
+from collections import Counter, defaultdict
+from collections.abc import Iterable, Sequence
+from dataclasses import dataclass, field, replace
+from difflib import SequenceMatcher
+from pathlib import Path
+from typing import Any, Final
+
+from master.config import LB_TYPES, TIER_BY_PREFIX, Paths
+from master.db import Database
+from master.normalise import nm_en, nm_en_body, nm_ml
+
+#: Below this SequenceMatcher ratio a pairing is left unmatched rather than
+#: guessed at. Two genuinely different neighbouring panchayats routinely score
+#: in the fifties, so the floor is what stops the fuzzy pass inventing matches.
+SIM_FLOOR: Final = 0.62
+
+#: The one part of the spine that does not come from the elections build. Each
+#: endpoint is a district dropdown, and the pair is (code column, name column).
+SEC_REGISTRY: Final[dict[str, tuple[str, str]]] = {
+    "detailed_results_urban_ajax.php": ("UrbanCd", "UrbanNameEng"),
+    "detailed_results_grama_ajax.php": ("GramaCd", "GramaNameEng"),
+    "detailed_results_block_ajax.php": ("BlockCd", "BlockNameEng"),
+    "detailed_results_dist_ajax.php": ("DistCd", "DistNameEng"),
+}
+
+#: Every body the elections build knows about, as one SELECT. Used twice: to
+#: populate the spine during a build, and to reconstruct it in memory during a
+#: validate, so the two cannot drift apart.
+SPINE_SELECT: Final = """
+SELECT lb_code,
+       (substr(district_code,2,2))::int AS district_ord,
+       max(district_name)               AS district_name,
+       max(lb_type)                     AS lb_type,
+       max(lb_name)                     AS lb_name_en,
+       max(lb_name_mal)                 AS lb_name_ml,
+       min(cycle)                       AS first_cycle,
+       max(cycle)                       AS last_cycle
+FROM src_elections.local_bodies
+GROUP BY lb_code, substr(district_code,2,2)
+"""
+
+LOCAL_BODY_DDL: Final = """
+CREATE TABLE core.local_body (
+  lb_key           serial primary key,
+  lb_code          text not null unique,
+  district_ord     int  not null,
+  district_name    text not null,
+  lb_type          text not null,
+  lb_name_en       text not null,
+  lb_name_ml       text,
+  -- Null for a body that exists but has never appeared in an election
+  -- result. Mattannur Municipality (M13057) is one: the SEC's registry
+  -- names it, its results feed never has, and it still has fourteen
+  -- years of projects and 366 meetings to show.
+  first_cycle      int,
+  last_cycle       int,
+  in_elections     boolean not null default true,
+  sakarma_lb_id    int  unique,
+  sakarma_match    text,
+  sakarma_score    numeric,
+  ksmart_lb_code   text,
+  osm_code         text
+);
+"""
+
+LB_SULEKHA_YEAR_DDL: Final = """
+CREATE TABLE core.lb_sulekha_year (
+  lb_key            int not null references core.local_body(lb_key),
+  year_label        text not null,
+  sulekha_lb_id     uuid not null,
+  district_index    int not null,
+  lb_index          int not null,
+  method            text not null,
+  score             numeric,
+  primary key (year_label, sulekha_lb_id)
+);
+"""
+
+Row = dict[str, Any]
+Match = tuple[Row, Row, str, float]
+
+
+# --------------------------------------------------------------------- inputs
+
+
+def sec_registry_bodies(cache: Path) -> dict[str, tuple[int, str, str]]:
+    """Every body the SEC's district dropdowns name, from the 2020 cache.
+
+    This is the SEC's registry, not its results feed -- it lists bodies that
+    returned no result, which is exactly what makes it useful here.
+    """
+    if not cache.exists():
+        return {}
+    found: dict[str, tuple[int, str, str]] = {}
+    con = sqlite3.connect(cache)
+    try:
+        rows = con.execute("SELECT key, json FROM resp WHERE key LIKE 'detailed_results%'")
+        for key, blob in rows:
+            endpoint = key.split("|", 1)[0]
+            if endpoint not in SEC_REGISTRY:
+                continue
+            code_key, name_key = SEC_REGISTRY[endpoint]
+            try:
+                payload = json.loads(blob)
+                if isinstance(payload, str):
+                    payload = json.loads(payload)
+                records = payload.get("data") or []
+            except Exception:
+                # A cache entry that is not JSON is a failed scrape, not a body.
+                continue
+            for record in records:
+                code = (record.get(code_key) or "").strip()
+                if not code or code[0] not in TIER_BY_PREFIX:
+                    continue
+                found[code] = (
+                    int(code[1:3]),
+                    TIER_BY_PREFIX[code[0]],
+                    (record.get(name_key) or "").strip(),
+                )
+    finally:
+        con.close()
+    return found
+
+
+def load_overrides(path: Path) -> list[Row]:
+    """Hand-recorded matches the cascade cannot reach, each with a reason.
+
+    Mirrors the pattern ``data/reference/geo/*_overrides.csv`` already uses: a
+    small reviewed file, not a threshold tweak that silently moves other rows.
+    """
+    if not path.exists():
+        return []
+    with path.open(encoding="utf-8-sig", newline="") as fh:
+        return list(csv.DictReader(fh))
+
+
+def unknown_override_codes(overrides: Iterable[Row], known: Iterable[str]) -> list[str]:
+    """Override rows naming an ``lb_code`` that does not exist.
+
+    An override is a human's decision recorded once, so a typo in one is worse
+    than no override at all: the cascade carries on, produces some other pairing,
+    and the file looks like it is doing something. Reported, never swallowed.
+    """
+    codes = set(known)
+    return sorted(
+        {o["lb_code"] for o in overrides if o.get("lb_code") and o["lb_code"] not in codes}
+    )
+
+
+# ------------------------------------------------------------------- matching
+
+
+def apply_overrides(
+    left: Sequence[Row],
+    right: Sequence[Row],
+    overrides: Sequence[Row],
+    source: str,
+    namefield: str,
+) -> tuple[list[Match], list[Row], list[str]]:
+    """Pull overridden rows out of ``left`` and pair them directly.
+
+    Returns the forced matches, the rows still needing the cascade, and any
+    override that named a body this side of the build cannot see.
+    """
+    by_code = {r["lb_code"]: r for r in right}
+    wanted = {
+        (
+            nm_en(o["district_name"]),
+            o["lb_type"],
+            nm_ml(o["source_name"]),
+            nm_en(o["source_name"]),
+        ): o
+        for o in overrides
+        if o["source"] == source
+    }
+    forced: list[Match] = []
+    rest: list[Row] = []
+    missing: list[str] = []
+    for lrow in left:
+        hit = None
+        for (_dist, typ, ml, en), override in wanted.items():
+            if lrow["lb_type"] != typ:
+                continue
+            if nm_ml(lrow.get(namefield)) == ml or nm_en(lrow.get(namefield)) == en:
+                hit = override
+                break
+        if hit and hit["lb_code"] in by_code:
+            forced.append((lrow, by_code[hit["lb_code"]], "override", 1.0))
+        else:
+            if hit:
+                missing.append(hit["lb_code"])
+            rest.append(lrow)
+    return forced, rest, sorted(set(missing))
+
+
+def cascade(
+    left: Sequence[Row], right: Sequence[Row], lname: str, rname: str
+) -> tuple[list[Match], list[Row]]:
+    """Match ``left`` onto ``right`` within (district, type) groups.
+
+    Returns (matches as (left, right, method, score), unmatched left rows).
+    """
+    lg: dict[tuple[Any, Any], list[Row]] = defaultdict(list)
+    rg: dict[tuple[Any, Any], list[Row]] = defaultdict(list)
+    for r in left:
+        lg[(r["dist_ord"], r["lb_type"])].append(r)
+    for r in right:
+        rg[(r["dist_ord"], r["lb_type"])].append(r)
+
+    matches: list[Match] = []
+    unmatched: list[Row] = []
+
+    for key, lrows in lg.items():
+        rrows = list(rg.get(key, []))
+        taken_r: set[int] = set()
+        open_l: list[Row] = []
+
+        by_name: dict[str, list[int]] = defaultdict(list)
+        for i, rrow in enumerate(rrows):
+            if rrow[rname]:
+                by_name[rrow[rname]].append(i)
+
+        for lrow in lrows:
+            # A name that hits two candidates is ambiguous, not exact: fall
+            # through and let elimination or similarity decide.
+            cands = [i for i in by_name.get(lrow[lname], []) if i not in taken_r]
+            if len(cands) == 1:
+                taken_r.add(cands[0])
+                matches.append((lrow, rrows[cands[0]], "exact", 1.0))
+            else:
+                open_l.append(lrow)
+
+        free_r = [i for i in range(len(rrows)) if i not in taken_r]
+
+        if len(open_l) == 1 and len(free_r) == 1:
+            matches.append((open_l[0], rrows[free_r[0]], "elimination", 1.0))
+            open_l, free_r = [], []
+
+        if open_l and free_r:
+            pairs: list[tuple[float, Row, int]] = []
+            for lrow in open_l:
+                for i in free_r:
+                    if not lrow[lname] or not rrows[i][rname]:
+                        continue
+                    pairs.append(
+                        (SequenceMatcher(None, lrow[lname], rrows[i][rname]).ratio(), lrow, i)
+                    )
+            pairs.sort(key=lambda p: -p[0])
+            used_l: set[int] = set()
+            used_r: set[int] = set()
+            for score, lrow, i in pairs:
+                if score < SIM_FLOOR or id(lrow) in used_l or i in used_r:
+                    continue
+                used_l.add(id(lrow))
+                used_r.add(i)
+                matches.append((lrow, rrows[i], "similarity", round(score, 4)))
+            rest_l = [lrow for lrow in open_l if id(lrow) not in used_l]
+            rest_r = [i for i in free_r if i not in used_r]
+            # Elimination again: the fuzzy pass can leave exactly one survivor
+            # on each side, and that pair is forced for the same reason as above.
+            if len(rest_l) == 1 and len(rest_r) == 1:
+                matches.append((rest_l[0], rrows[rest_r[0]], "elimination", 1.0))
+            else:
+                unmatched.extend(rest_l)
+        else:
+            unmatched.extend(open_l)
+
+    return matches, unmatched
+
+
+def sakarma_pool(spine: Sequence[Row]) -> list[Row]:
+    """The bodies Sakarma could plausibly be talking about.
+
+    Sakarma's meetings begin in 2016, so a body whose last election cycle was
+    2010 cannot have any. Without this guard, elimination forces a wrong pair
+    whenever a group has a body on one side that the other side lacks --
+    Sakarma's Mattannur Municipality was landing on the defunct Kannur
+    Municipality (M13052, last contested 2010) purely to balance the group.
+    A body with no election history at all (``last_cycle`` null) stays eligible:
+    it is exactly the case this guard must not exclude.
+    """
+    return [r for r in spine if not r["last_cycle"] or int(r["last_cycle"]) >= 2015]
+
+
+# --------------------------------------------------------------------- result
+
+
+@dataclass(frozen=True, slots=True)
+class CrosswalkResult:
+    """What one crosswalk run produced, and everything wrong with it."""
+
+    bodies: int
+    registry_only: int
+    sakarma_total: int
+    sakarma_matches: tuple[Match, ...]
+    sakarma_unmatched: tuple[Row, ...]
+    sulekha_total: int
+    sulekha_rows: tuple[list[Any], ...]
+    sulekha_unmatched: tuple[Row, ...]
+    per_year: tuple[tuple[str, int, int], ...]
+    problems: tuple[str, ...] = ()
+    methods: Counter[str] = field(default_factory=Counter)
+    year_methods: Counter[str] = field(default_factory=Counter)
+
+    @property
+    def counts(self) -> dict[str, int]:
+        return {
+            "bodies": self.bodies,
+            "registry-only bodies": self.registry_only,
+            "sakarma bodies matched": len(self.sakarma_matches),
+            "sakarma bodies total": self.sakarma_total,
+            "sulekha year-rows matched": len(self.sulekha_rows),
+            "sulekha year-rows total": self.sulekha_total,
+        }
+
+    def gate(self) -> list[str]:
+        """Reasons this crosswalk must not be written. Empty means it passed.
+
+        Unmatched rows are the whole failure mode: a Sakarma body with no
+        ``lb_key`` silently drops its meetings from the join, and the page for
+        that body renders as though it never met.
+        """
+        problems = list(self.problems)
+        if self.sakarma_unmatched:
+            names = ", ".join(str(r.get("name_ml")) for r in self.sakarma_unmatched[:10])
+            problems.append(f"{len(self.sakarma_unmatched)} sakarma bodies unmatched: {names}")
+        if self.sulekha_unmatched:
+            names = ", ".join(
+                f"{r.get('year_label')} {r.get('lb_name')}" for r in self.sulekha_unmatched[:10]
+            )
+            problems.append(f"{len(self.sulekha_unmatched)} sulekha year-rows unmatched: {names}")
+        return problems
+
+
+# ----------------------------------------------------------------- the resolve
+
+
+def _prepare_spine(rows: Iterable[Row]) -> list[Row]:
+    """Add the comparison keys the cascade groups and matches on."""
+    prepared = []
+    for r in rows:
+        # A validate has no surrogate key to offer: the table does not exist yet.
+        r.setdefault("lb_key", None)
+        r["dist_ord"] = str(int(r["district_ord"]))
+        r["k_ml"] = nm_ml(r.get("lb_name_ml"))
+        r["k_en"] = nm_en(r.get("lb_name_en"))
+        prepared.append(r)
+    return prepared
+
+
+def resolve(
+    spine: Sequence[Row],
+    sakarma: Sequence[Row],
+    sulekha: Sequence[Row],
+    overrides: Sequence[Row],
+    *,
+    registry_only: int = 0,
+) -> CrosswalkResult:
+    """Run both cascades. Pure: no database, no files, no output.
+
+    Keeping this side-effect free is what lets ``validate`` gate a build without
+    creating a single table, and what lets the awkward cases be tested on six
+    rows instead of a five-gigabyte restore.
+    """
+    problems = unknown_override_codes(overrides, (r["lb_code"] for r in spine))
+    reported = [f"override names unknown lb_code {code}" for code in problems]
+
+    # ---- sakarma ----------------------------------------------------------
+    pool = sakarma_pool(spine)
+    sk_forced, sk_rest, sk_missing = apply_overrides(sakarma, pool, overrides, "sakarma", "name_ml")
+    sk_matches, sk_unmatched = cascade(sk_rest, pool, "k_ml", "k_ml")
+    sk_matches += sk_forced
+    reported += [
+        f"sakarma override names lb_code {code}, which is outside the sakarma candidate pool"
+        for code in sk_missing
+        if code not in problems
+    ]
+
+    # ---- sulekha, per year ------------------------------------------------
+    rows_out: list[list[Any]] = []
+    su_unmatched: list[Row] = []
+    per_year: list[tuple[str, int, int]] = []
+    year_methods: Counter[str] = Counter()
+
+    by_year: dict[str, list[Row]] = defaultdict(list)
+    for r in sulekha:
+        if r["dist_ord"] is not None:
+            by_year[r["year_label"]].append(r)
+
+    for year, rows in sorted(by_year.items()):
+        forced, rest, su_missing = apply_overrides(rows, spine, overrides, "sulekha", "k_en")
+        matched, unmatched = cascade(rest, spine, "k_en", "k_en")
+        matched += forced
+        rows_out += [
+            [rr["lb_key"], year, lr["sulekha_lb_id"], lr["district_index"], lr["lb_index"], m, s]
+            for lr, rr, m, s in matched
+        ]
+        year_methods.update(meth for _, _, meth, _ in matched)
+        su_unmatched += unmatched
+        per_year.append((year, len(matched), len(unmatched)))
+        reported += [
+            f"{year}: sulekha override names unknown lb_code {code}"
+            for code in su_missing
+            if code not in problems
+        ]
+
+    return CrosswalkResult(
+        bodies=len(spine),
+        registry_only=registry_only,
+        sakarma_total=len(sakarma),
+        sakarma_matches=tuple(sk_matches),
+        sakarma_unmatched=tuple(sk_unmatched),
+        sulekha_total=sum(len(rows) for rows in by_year.values()),
+        sulekha_rows=tuple(rows_out),
+        sulekha_unmatched=tuple(su_unmatched),
+        per_year=tuple(per_year),
+        problems=tuple(dict.fromkeys(reported)),
+        methods=Counter(m for _, _, m, _ in sk_matches),
+        year_methods=year_methods,
+    )
+
+
+# ------------------------------------------------------------------ the build
+
+
+def read_sakarma(db: Database) -> list[Row]:
+    rows = db.query("SELECT id, district_id::text AS dist_ord, lb_type_id, name_ml FROM sakarma.lb")
+    for r in rows:
+        r["lb_type"] = LB_TYPES[int(r["lb_type_id"])]
+        r["k_ml"] = nm_ml(r["name_ml"])
+    return rows
+
+
+def read_sulekha(db: Database, spine: Sequence[Row]) -> tuple[list[Row], list[str]]:
+    """Sulekha's per-year local body list, keyed to our district ordinals.
+
+    Sulekha names its districts and never numbers them, so the join back to the
+    spine goes through the district name. A name that fails to resolve takes
+    every body in that district with it, so it is returned rather than printed.
+    """
+    rows = db.query(
+        """
+        SELECT lb.id::text AS sulekha_lb_id, d.year_label, d.district_index,
+               lb.lb_index, d.district_name, d.lb_type_label, lb.lb_name
+        FROM src_sulekha.local_bodies lb JOIN src_sulekha.districts d ON d.id = lb.district_id
+        """
+    )
+    dist_ord_by_name = {nm_en(r["district_name"]): r["dist_ord"] for r in spine}
+    for r in rows:
+        r["lb_type"] = r["lb_type_label"]
+        r["dist_ord"] = dist_ord_by_name.get(nm_en(r["district_name"]))
+        r["k_en"] = nm_en_body(r["lb_name"])
+    unresolved = sorted({r["district_name"] for r in rows if r["dist_ord"] is None})
+    return rows, unresolved
+
+
+def read_spine(db: Database) -> list[Row]:
+    """The spine as it exists in ``core.local_body``, with its surrogate keys."""
+    return _prepare_spine(
+        db.query(
+            "SELECT lb_key, lb_code, district_ord, district_name, lb_type, lb_name_en, "
+            "lb_name_ml, first_cycle, last_cycle FROM core.local_body"
+        )
+    )
+
+
+def plan_spine(db: Database, paths: Paths) -> tuple[list[Row], int]:
+    """The spine as it *would* be, read straight from the sources.
+
+    Used by ``validate``, which must gate the crosswalk without creating a
+    table. Same SELECT and same registry pass as the build, so a validate that
+    passes and a build that fails would be a bug in one of two callers, not in
+    two divergent definitions of what a local body is.
+    """
+    rows = db.query(SPINE_SELECT)
+    known = {r["lb_code"] for r in rows}
+    district_name = {str(int(r["district_ord"])): r["district_name"] for r in rows}
+    extra = 0
+    registry = sorted(sec_registry_bodies(paths.sec_registry_cache).items())
+    for code, (dist_ord, tier, name) in registry:
+        if code in known:
+            continue
+        rows.append(
+            {
+                "lb_key": None,
+                "lb_code": code,
+                "district_ord": str(dist_ord),
+                "district_name": district_name.get(str(dist_ord), ""),
+                "lb_type": tier,
+                "lb_name_en": name,
+                "lb_name_ml": "",
+                "first_cycle": "",
+                "last_cycle": "",
+            }
+        )
+        extra += 1
+    return _prepare_spine(rows), extra
+
+
+def write_spine(db: Database, paths: Paths) -> int:
+    """Create ``core.local_body`` and fill it from the elections build.
+
+    This runs before the gate because it is a faithful copy of a source, not a
+    judgement: every row is one ``lb_code`` the elections build already emitted.
+    The judgements -- which Sakarma body is which, which Sulekha row is which --
+    are gated before anything writes them.
+    """
+    db.execute("CREATE SCHEMA IF NOT EXISTS core;")
+    db.execute("DROP TABLE IF EXISTS core.lb_sulekha_year, core.local_body CASCADE;")
+    db.execute(LOCAL_BODY_DDL)
+    db.execute(
+        "INSERT INTO core.local_body "
+        "(lb_code, district_ord, district_name, lb_type, lb_name_en, lb_name_ml, "
+        " first_cycle, last_cycle)" + SPINE_SELECT
+    )
+
+    # The elections build only knows bodies that returned a result. The SEC's
+    # own registry endpoint lists every body it recognises, result or not, so
+    # anything there but not in the spine is a real body with no election data
+    # -- add it rather than lose its finances and meetings.
+    added = 0
+    registry = sorted(sec_registry_bodies(paths.sec_registry_cache).items())
+    for code, (dist_ord, tier, name) in registry:
+        added += (
+            db.scalar(
+                """
+                INSERT INTO core.local_body
+                  (lb_code, district_ord, district_name, lb_type, lb_name_en, in_elections)
+                SELECT %s, %s,
+                       (SELECT max(district_name) FROM core.local_body WHERE district_ord = %s),
+                       %s, %s, false
+                WHERE NOT EXISTS (SELECT 1 FROM core.local_body WHERE lb_code = %s)
+                RETURNING 1
+                """,
+                [code, dist_ord, dist_ord, tier, name, code],
+            )
+            or 0
+        )
+    return added
+
+
+def link_geometry(db: Database) -> None:
+    """Carry the geometry crosswalk's codes onto the spine.
+
+    Overrides are applied after the automatic crosswalk, so a hand-recorded
+    pairing wins -- the same precedence ``geo.build.crosswalk`` uses.
+    """
+    db.execute(
+        """
+        UPDATE core.local_body b SET ksmart_lb_code = x.ksmart_lb_code
+        FROM src_geo.ksmart_lb_crosswalk x WHERE x.lb_code = b.lb_code;
+        UPDATE core.local_body b SET ksmart_lb_code = o.ksmart_lb_code
+        FROM src_geo.ksmart_lb_overrides o WHERE o.lb_code = b.lb_code;
+        UPDATE core.local_body b SET osm_code = o.osm_code
+        FROM src_geo.osm_lb_overrides o WHERE o.lb_code = b.lb_code;
+        """
+    )
+
+
+def write_matches(db: Database, result: CrosswalkResult) -> None:
+    """Write both crosswalk tables. Only reached once the gate has passed."""
+    db.execute("DROP TABLE IF EXISTS core._sk_map;")
+    db.execute(
+        "CREATE TABLE core._sk_map "
+        "(sakarma_lb_id int, lb_key int, method text, score numeric);"
+    )
+    db.copy_rows(
+        "core._sk_map",
+        ["sakarma_lb_id", "lb_key", "method", "score"],
+        [[int(sk["id"]), int(lb["lb_key"]), m, s] for sk, lb, m, s in result.sakarma_matches],
+    )
+    db.execute(
+        """
+        UPDATE core.local_body b
+           SET sakarma_lb_id = m.sakarma_lb_id, sakarma_match = m.method, sakarma_score = m.score
+        FROM core._sk_map m WHERE m.lb_key = b.lb_key;
+        """
+    )
+
+    db.execute(LB_SULEKHA_YEAR_DDL)
+    db.copy_rows(
+        "core.lb_sulekha_year",
+        ["lb_key", "year_label", "sulekha_lb_id", "district_index", "lb_index", "method", "score"],
+        [
+            [int(lb_key), year, sid, int(di), int(li), meth, score]
+            for lb_key, year, sid, di, li, meth, score in result.sulekha_rows
+        ],
+    )
+
+
+def validate(db: Database, paths: Paths) -> CrosswalkResult:
+    """Resolve the crosswalk against the live sources, writing nothing."""
+    spine, registry_only = plan_spine(db, paths)
+    sakarma = read_sakarma(db)
+    sulekha, unresolved_districts = read_sulekha(db, spine)
+    result = resolve(
+        spine,
+        sakarma,
+        sulekha,
+        load_overrides(paths.overrides),
+        registry_only=registry_only,
+    )
+    return _with_district_problems(result, unresolved_districts)
+
+
+def build(db: Database, paths: Paths) -> CrosswalkResult:
+    """Create the spine, resolve the crosswalk, gate it, then write the matches."""
+    registry_only = write_spine(db, paths)
+    link_geometry(db)
+
+    spine = read_spine(db)
+    sakarma = read_sakarma(db)
+    sulekha, unresolved_districts = read_sulekha(db, spine)
+    result = _with_district_problems(
+        resolve(
+            spine,
+            sakarma,
+            sulekha,
+            load_overrides(paths.overrides),
+            registry_only=registry_only,
+        ),
+        unresolved_districts,
+    )
+    if not result.gate():
+        write_matches(db, result)
+    return result
+
+
+def _with_district_problems(result: CrosswalkResult, unresolved: Sequence[str]) -> CrosswalkResult:
+    """A district that fails to resolve disqualifies every body inside it at once."""
+    if not unresolved:
+        return result
+    return replace(
+        result,
+        problems=result.problems + (f"sulekha district names not resolved: {sorted(unresolved)}",),
+    )

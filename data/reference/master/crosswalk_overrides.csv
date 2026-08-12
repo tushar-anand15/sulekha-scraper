@@ -1,0 +1,4 @@
+source,district_name,lb_type,source_name,lb_code,reason
+sakarma,KOLLAM,Grama Panchayat,കിഴക്കേക്കല്ലട,G02046,"Sakarma writes 'east' as the Malayalam കിഴക്കേ; elections transliterates it as ഈസ്റ്റ് കല്ലട / East Kallada. The two share almost no characters, so no similarity score can reach it."
+sulekha,Kollam,Grama Panchayat,Kizhakkekallada,G02046,"Same body as East Kallada (G02046); Sulekha transliterates the Malayalam കിഴക്കേ rather than using 'East'."
+sulekha,Malappuram,Grama Panchayat,Uragam,G10077,"Transliteration (Oo- / U-, -kam / -gam). Already documented for KSMART in data/reference/geo/ksmart_lb_overrides.csv."
