@@ -118,12 +118,6 @@ ALLOWED: dict[int, list[AllowedDifference]] = {
         AllowedDifference("ward_reservation", RECOVERED_PAIRINGS, max_cells=200),
         AllowedDifference("lb_head_party_group", RECOVERED_PAIRINGS, max_cells=100),
         AllowedDifference("candidate_role", RECOVERED_PAIRINGS, max_cells=100),
-        AllowedDifference(
-            "ward_name",
-            "9 wards in M09070 and B06054 lose a ward name the shipped file "
-            "carried. A known shortfall, small and bounded, not yet diagnosed.",
-            max_cells=9,
-        ),
     ],
     2020: [
         CONTROL_TYPE,
@@ -296,6 +290,22 @@ class TestKnownFixes:
         declared = [r for r in ward if r["candidate_gender"] == "T"]
         assert len(declared) == 1
         assert declared[0]["gender_source"] == "pdf"
+
+    def test_countermanded_wards_still_carry_their_name(
+        self, built: dict[int, list[dict[str, str]]]
+    ) -> None:
+        """The ward view lists only wards that produced a declared result.
+
+        B06054003 KALLAR and M09070021 Kuliyadu had their polls annulled, so
+        they appear only in the roster, which is the sole source of their
+        names.
+        """
+        names = {r["ward_code"]: r["ward_name"] for r in built[2015]}
+        assert names["B06054003"] == "KALLAR"
+        assert names["M09070021"] == "Kuliyadu"
+        for year in (2015, 2020):
+            blank = [r["ward_code"] for r in built[year] if not r["ward_name"]]
+            assert blank == [], f"{year}: wards with no name"
 
     def test_standing_committee_chairs_are_not_demoted_to_member(
         self, built: dict[int, list[dict[str, str]]]

@@ -301,6 +301,41 @@ def _load_lb_names_mal(cache: ResponseCache) -> dict[str, str]:
     return out
 
 
+_ROSTER_FIELDS: Final[tuple[tuple[str, str, str], ...]] = (
+    ("getPanchayathWards", "GramaWardCd", "GramaWardNameEng"),
+    ("getBlockPanchayathWards", "BlockWardCd", "BlockWardNameEng"),
+    ("getUrbanPanchayathWards", "UrbanWardCd", "UrbanWardNameEng"),
+    ("getDistWardsByDistrict", "DistWardCd", "DistWardNameEng"),
+)
+
+
+def _load_roster_ward_names(cache: ResponseCache) -> dict[str, str]:
+    """Ward names from the roster, which lists every ward a local body has.
+
+    The ward-list view only returns wards that produced a declared result, so
+    a countermanded ward is absent from it entirely -- B06054003 KALLAR and
+    M09070021 Kuliyadu in 2015, whose polls were annulled and whose
+    candidates all sit at zero votes. The roster is the only source of those
+    names, and it holds them for all four local-body families.
+    """
+    out: dict[str, str] = {}
+    for key in cache.keys("contest_cand_ajax.php"):
+        fields = next((f for f in _ROSTER_FIELDS if f"process={f[0]}" in key), None)
+        if fields is None:
+            continue
+        _, code_field, name_field = fields
+        payload = cache.get(key)
+        records = payload.get("data") if isinstance(payload, dict) else None
+        if not records:
+            continue
+        for record in records:
+            code = str(record.get(code_field, "")).strip()
+            name = str(record.get(name_field, "")).strip()
+            if code and name:
+                out[code] = name
+    return out
+
+
 def _load_ward_names_mal(cache: ResponseCache) -> dict[str, str]:
     """Only the urban roster (``getUrbanPanchayathWards``) carries a
     Malayalam ward name; Grama, Block and District rosters do not."""
@@ -480,7 +515,17 @@ def load_inputs(
 
     with ResponseCache(paths.caches / spec.sec_cache) as sec:
         local_bodies = _load_local_bodies(sec)
-        ward_names = _load_wv_ward_names(sec)
+        # The roster underlies the ward view rather than replacing it: the
+        # view wins wherever it has a name, and the roster supplies the wards
+        # it omits because their poll was annulled. Declared per cycle --
+        # 2025 publishes no roster, so it has no fallback to draw on.
+        ward_names = _load_roster_ward_names(sec) if spec.has_roster else {}
+        for code, name in _load_wv_ward_names(sec).items():
+            # Only a real name displaces the roster's. The view stores whatever
+            # it has, blank included, and letting a blank win would undo the
+            # fallback for exactly the wards it exists to cover.
+            if name or code not in ward_names:
+                ward_names[code] = name
         can_by_ward = _load_can(sec)
         detail_by_ward = _load_detail(sec) if spec.has_detail else {}
         lb_names_mal = _load_lb_names_mal(sec) if spec.has_lb_malayalam else {}
