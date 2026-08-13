@@ -63,7 +63,15 @@ SEC_REGISTRY: Final[dict[str, tuple[str, str]]] = {
 SPINE_SELECT: Final = """
 SELECT lb_code,
        (substr(district_code,2,2))::int AS district_ord,
-       max(district_name)               AS district_name,
+       -- Per district, not per body. The elections source spells Kozhikode two
+       -- ways -- 182 rows KOZHIKODE and 182 KOZHIKKODE -- so a body appearing
+       -- only in the misspelled cycles kept the misspelling, and the district
+       -- dropdown listed Kozhikode twice with five bodies stranded under the
+       -- second entry. The window runs after the GROUP BY, so every body in a
+       -- district takes one spelling whichever cycles it appears in.
+       max(max(district_name)) OVER (
+         PARTITION BY (substr(district_code,2,2))::int
+       )                                AS district_name,
        max(lb_type)                     AS lb_type,
        max(lb_name)                     AS lb_name_en,
        max(lb_name_mal)                 AS lb_name_ml,
