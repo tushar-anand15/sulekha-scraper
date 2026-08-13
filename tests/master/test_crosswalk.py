@@ -455,6 +455,56 @@ def test_an_ordinal_outside_kerala_is_refused_rather_than_written_as_null():
         district_name_for(99, {})
 
 
+def test_the_spine_states_which_side_of_the_registry_each_body_came_from(registry_cache, paths):
+    """``in_elections`` is a fact both callers know outright, so neither guesses it.
+
+    Guessing means reading an empty ``first_cycle``, and every value ``db.query``
+    returns is a string: a body the SEC never published and a body whose cycles
+    failed to load are indistinguishable that way. The flag is what
+    ``core.lb_coverage`` and the elections page read.
+    """
+    from master.crosswalk import is_in_elections
+
+    db = StubDatabase(
+        [
+            {
+                "lb_code": "M13052",
+                "district_ord": "13",
+                "district_name": "KANNUR",
+                "lb_type": "Municipality",
+                "lb_name_en": "Kannur",
+                "lb_name_ml": "കണ്ണൂർ",
+                "first_cycle": "2010",
+                "last_cycle": "2010",
+            }
+        ]
+    )
+    rows, _ = plan_spine(db, paths)
+    by_code = {r["lb_code"]: r for r in rows}
+    assert by_code["M13052"]["in_elections"] is True
+    assert by_code["M13057"]["in_elections"] is False
+    assert is_in_elections(by_code["M13052"])
+    assert not is_in_elections(by_code["M13057"])
+
+
+def test_the_flag_beats_the_cycles_when_the_two_disagree():
+    """Read from ``core.local_body`` the flag arrives as 'f', and it is the fact.
+    A body carrying cycles and a false flag is a build bug worth seeing, not one
+    to paper over by preferring the evidence to the record."""
+    from master.crosswalk import is_in_elections
+
+    assert not is_in_elections({"in_elections": "f", "first_cycle": "2020"})
+    assert is_in_elections({"in_elections": "t", "first_cycle": ""})
+
+
+def test_a_hand_built_row_falls_back_to_its_cycles():
+    """Fixtures in this file predate the flag and must keep meaning what they meant."""
+    from master.crosswalk import is_in_elections
+
+    assert is_in_elections(spine("G02001", en="Kottarakkara"))
+    assert not is_in_elections(spine("M13057", en="Mattannur", first="", last=""))
+
+
 def test_a_registry_body_already_in_a_cycle_is_not_duplicated(registry_cache, paths):
     db = StubDatabase(
         [

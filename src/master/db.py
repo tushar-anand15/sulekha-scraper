@@ -14,6 +14,15 @@ rather than ``''``, or ``district_ord`` as ``1`` rather than ``'1'``, changes
 which bodies group together. CSV keeps every value a string, which is what the
 cascade was written against.
 
+The cost of that is real and worth naming: NULL and the empty string are the
+same value here, so nothing read through ``query`` can tell "the source has no
+answer" from "the column is blank". Where that distinction mattered -- whether
+the SEC ever published a result for a body -- it is now carried as an explicit
+flag rather than inferred from an empty ``first_cycle`` (see
+``crosswalk.is_in_elections``). The protocol stays as it is: the app reads this
+database through asyncpg, which types properly, so the only code affected is the
+matching, and the matching is where changing it would do harm.
+
 *The connection is autocommit.* Each psql invocation was its own transaction, so
 a failed statement left everything before it committed. Wrapping the build in one
 transaction would be tidier, but it would also change what a half-finished run

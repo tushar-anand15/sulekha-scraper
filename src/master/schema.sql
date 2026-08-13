@@ -6,12 +6,15 @@
 --
 -- Sources stay in src_* schemas and are never edited. These tables are derived
 -- and can be dropped and rebuilt from them at any time.
+--
+-- The build does not run this file against core/finance/meetings/elections. It
+-- creates a parallel set -- core_build, finance_build and so on -- rewrites
+-- every schema qualifier below to point at them, and renames them into place
+-- only once every table exists (see src/master/swap.py). The names here are the
+-- live ones so the file reads the way the database looks, and so `psql -f` still
+-- does the obvious thing; the four schemas are created by the caller.
 
 -- ---------------------------------------------------------------- dimensions
-
-CREATE SCHEMA IF NOT EXISTS finance;
-CREATE SCHEMA IF NOT EXISTS meetings;
-CREATE SCHEMA IF NOT EXISTS elections;
 
 -- Kerala's financial year runs April to March. One rule, one place: a meeting
 -- on 12 March 2025 belongs to 2024-25, and must line up with the finance rows
@@ -181,6 +184,12 @@ DROP TABLE IF EXISTS core.lb_coverage CASCADE;
 CREATE TABLE core.lb_coverage AS
 SELECT b.lb_key, b.lb_code, b.district_name, b.lb_type, b.lb_name_en, b.lb_name_ml,
        b.first_cycle, b.last_cycle,
+       -- Carried rather than joined for. Every body lookup and the selector need
+       -- it -- Mattannur has finances and meetings and no election result, and a
+       -- page that cannot tell that from "no data" renders as broken. An empty
+       -- first_cycle is evidence for the same thing, but it is evidence, not the
+       -- fact: this is the column the SEC's registry actually settled.
+       b.in_elections,
        (b.sakarma_lb_id IS NOT NULL)  AS has_meetings,
        (b.ksmart_lb_code IS NOT NULL) AS has_geometry,
        f.years_with_finance, f.projects_total, f.formulation_total, f.expense_total,
@@ -197,3 +206,36 @@ LEFT JOIN (
 ) m ON m.lb_key = b.lb_key;
 ALTER TABLE core.lb_coverage ADD PRIMARY KEY (lb_key);
 CREATE INDEX ON core.lb_coverage (district_name, lb_type);
+
+-- ------------------------------------------------------------------ provenance
+-- R9: every figure on the site traces to a named dataset and a build date. The
+-- API used to take that date from a constant it could be handed by an
+-- environment variable, which meant the site could state a date the data did
+-- not have. This is the date the data has, written by the run that made it.
+--
+-- One row, not a history. The derived schemas are rebuilt wholesale and swapped
+-- in, so a row describing an earlier build would be swapped out along with the
+-- tables it described -- a history table here could only ever hold the present.
+-- What was true of an earlier build lives in data/final/master/manifest.json,
+-- which is a file, and in git.
+--
+-- The row is inserted by the build, not here: the timestamp, the fingerprint and
+-- the counts are facts about one run.
+DROP TABLE IF EXISTS core.build_manifest CASCADE;
+CREATE TABLE core.build_manifest (
+  dataset        text        primary key,
+  built_at       timestamptz not null,
+  master_version text        not null,
+  -- Ties the row to data/final/master/manifest.json, which carries the gates,
+  -- the coverage and a hash of every input file.
+  fingerprint    text        not null,
+  -- The dumps that were restored before the build ran. The restore is a manual
+  -- step outside this module, so these are declared by whoever ran it --
+  -- `master build --source-dump …` -- and default to the pair the runbook names.
+  source_dumps   text[]      not null,
+  -- The headline counts, read from the tables this same run built.
+  bodies         int         not null,
+  projects       int         not null,
+  meetings       int         not null,
+  candidates     int         not null
+);

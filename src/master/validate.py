@@ -39,9 +39,10 @@ from pathlib import Path
 from typing import Any, Final
 
 from master import __version__
-from master.config import Paths
-from master.crosswalk import CrosswalkResult
+from master.config import DATASET_NAME, SOURCE_DUMPS, Paths
+from master.crosswalk import CrosswalkResult, is_in_elections
 from master.db import Database
+from master.swap import Target
 
 _WIDTH: Final = 62
 _CHUNK: Final = 1 << 20
@@ -348,7 +349,7 @@ def assess(result: CrosswalkResult, source: Source, *, inputs: Sequence[Path] = 
     unelected = tuple(
         f"{r['lb_name_en'] or r['lb_name_ml']} ({r['lb_code']})"
         for r in spine
-        if not r.get("first_cycle") and not r.get("last_cycle")
+        if not is_in_elections(r)
     )
     meetings_per_year = _per_year(source.meetings)
 
@@ -455,6 +456,50 @@ def write(quality: Quality, paths: Paths) -> list[Path]:
         json.dumps(quality.manifest(), indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
     )
     return [report, manifest]
+
+
+def record_build(
+    db: Database,
+    target: Target,
+    quality: Quality,
+    *,
+    dumps: Sequence[str] = SOURCE_DUMPS,
+    dataset: str = DATASET_NAME,
+) -> dict[str, Any]:
+    """Write the one row of ``core.build_manifest``. Returns what it wrote.
+
+    R9 asks that every figure on the site trace to a named dataset and a build
+    date. The API had been taking that date from a constant it could be handed
+    by an environment variable, so the site could state a date the data did not
+    have -- provenance held by discipline rather than by construction. Here the
+    date is written by the run that produced the tables, from the same
+    connection, inside the same swap: it cannot describe a build that did not
+    happen.
+
+    The counts are read back from the tables rather than passed in, so the row
+    states what is in the database and not what the build believed it put there.
+    """
+    counts = {
+        "bodies": int(db.scalar(f"SELECT count(*) FROM {target.core}.local_body") or 0),
+        "projects": int(db.scalar(f"SELECT count(*) FROM {target.finance}.project") or 0),
+        "meetings": int(db.scalar(f"SELECT count(*) FROM {target.meetings}.meeting") or 0),
+        "candidates": int(db.scalar(f"SELECT count(*) FROM {target.elections}.candidate") or 0),
+    }
+    row = {
+        "dataset": dataset,
+        "built_at": datetime.now(UTC),
+        "master_version": __version__,
+        "fingerprint": quality.manifest()["fingerprint"],
+        "source_dumps": list(dumps),
+        **counts,
+    }
+    columns = ", ".join(row)
+    db.execute(
+        f"INSERT INTO {target.core}.build_manifest ({columns}) "
+        f"VALUES ({', '.join(['%s'] * len(row))})",
+        list(row.values()),
+    )
+    return row
 
 
 def declared_inputs(paths: Paths) -> list[Path]:

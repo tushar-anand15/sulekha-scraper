@@ -4,8 +4,15 @@ Two verbs, the same split ``data-merge`` and ``geo`` already use:
 
 ``validate``   resolve the crosswalk against the live sources and gate it,
                creating no table and writing no file
-``build``      load the sources, resolve, gate, then write the derived schema,
-               a quality report and a manifest
+``build``      load the sources, resolve, gate, then build the derived schema in
+               scratch schemas and swap them in, with a quality report and a
+               manifest
+
+A build that fails leaves the database as it found it. Everything derived is
+written into ``core_build``, ``finance_build``, ``meetings_build`` and
+``elections_build``, and renamed into place in one transaction once every table
+exists -- so a failure at the gate, or twenty minutes into ``finance.project``,
+costs a rebuild rather than the site. See ``master.swap``.
 
 Both verbs run the same gates, from ``master.validate``, against the same source
 counts. A validate that passes and a build that fails would therefore be a bug in
@@ -68,9 +75,11 @@ def _report(result: CrosswalkResult, *, per_year: bool) -> None:
 def _gate(quality: Quality) -> Quality:
     """Print every gate, and stop the run if any failed.
 
-    Called before anything is written, never after. Both verbs run the same
-    gates against the same sources, so a validate that passes and a build that
-    fails would mean a bug rather than two different standards.
+    Called before anything the site reads is touched. In a build that means
+    before the staged schemas are swapped in, and before a single match is
+    written even into staging. Both verbs run the same gates against the same
+    sources, so a validate that passes and a build that fails would mean a bug
+    rather than two different standards.
     """
     for check in quality.gates:
         click.echo(check.render(), err=not check.ok)
@@ -108,16 +117,34 @@ def validate(obj: tuple[Paths, str], per_year: bool, full_report: bool) -> None:
 @main.command()
 @click.option("--skip-load", is_flag=True, help="Reuse the src_* schemas already loaded.")
 @click.option("--per-year", is_flag=True, help="Break the Sulekha match down by financial year.")
+@click.option(
+    "--source-dump",
+    "source_dumps",
+    multiple=True,
+    help="A dump this build was restored from. Repeatable. Recorded in core.build_manifest.",
+)
 @click.pass_obj
-def build(obj: tuple[Paths, str], skip_load: bool, per_year: bool) -> None:
-    """Load the sources, gate the crosswalk, then write the derived schema."""
+def build(
+    obj: tuple[Paths, str], skip_load: bool, per_year: bool, source_dumps: tuple[str, ...]
+) -> None:
+    """Load the sources, gate the crosswalk, then write the derived schema.
+
+    Nothing the site reads is touched until the whole thing is built. The
+    derived schemas are written as ``core_build``, ``finance_build`` and so on,
+    and renamed into place in one transaction at the end, so a build that fails
+    -- at its gate, or twenty minutes into ``finance.project`` -- leaves the
+    previous database exactly as it was rather than half-replaced.
+    """
     paths, url = obj
+    from master.config import SOURCE_DUMPS
     from master.crosswalk import prepare, write_matches
     from master.db import connect
     from master.load import elections, geo
-    from master.validate import gate
+    from master.swap import STAGING_SUFFIX, Target, create, discard, swap
+    from master.validate import gate, record_build
     from master.validate import write as write_reports
 
+    target = Target(STAGING_SUFFIX)
     click.echo(f"building into {url}")
     with connect(url) as db:
         if not skip_load:
@@ -126,26 +153,43 @@ def build(obj: tuple[Paths, str], skip_load: bool, per_year: bool) -> None:
             for label, count in geo.load(db, paths).items():
                 click.echo(f"  src_geo.{label:<30} {count:>9,} rows")
 
-        # The spine is written first because it is a faithful copy of a source.
-        # Everything after this line is a judgement, and none of it -- not a
-        # match, not the derived schema, not the report -- is written until
-        # every gate has passed.
-        result = prepare(db, paths)
-        _report(result, per_year=per_year)
-        quality = _gate(gate(db, paths, result=result))
-        write_matches(db, result)
+        swapped = False
+        create(db, target)
+        click.echo(f"  staging into {', '.join(target.schemas)}")
+        try:
+            # The spine goes into the staging schema, so a gate that fails after
+            # it is written cannot leave the live database holding a fresh spine
+            # and no crosswalk -- correct rows, joined to nothing.
+            result = prepare(db, paths, target)
+            _report(result, per_year=per_year)
+            quality = _gate(gate(db, paths, result=result))
+            write_matches(db, result, target)
 
-        click.echo(f"  applying {SCHEMA_SQL.name}")
-        db.run_script(SCHEMA_SQL)
-        for table in (
-            "finance.project",
-            "finance.lb_year_summary",
-            "meetings.meeting",
-            "meetings.artifact",
-            "elections.candidate",
-            "core.lb_coverage",
-        ):
-            click.echo(f"  {table:<28} {db.scalar(f'SELECT count(*) FROM {table}'):>9,} rows")
+            click.echo(f"  applying {SCHEMA_SQL.name}")
+            db.execute(target.sql(SCHEMA_SQL.read_text(encoding="utf-8")))
+            for schema, table in (
+                ("finance", "project"),
+                ("finance", "lb_year_summary"),
+                ("meetings", "meeting"),
+                ("meetings", "artifact"),
+                ("elections", "candidate"),
+                ("core", "lb_coverage"),
+            ):
+                staged = f"{target.name(schema)}.{table}"
+                rows = db.scalar(f"SELECT count(*) FROM {staged}")
+                click.echo(f"  {schema + '.' + table:<28} {rows:>9,} rows")
+
+            manifest = record_build(db, target, quality, dumps=source_dumps or SOURCE_DUMPS)
+            click.echo(f"  build_manifest               {manifest['built_at'].isoformat()}")
+            click.echo(f"  built from                   {', '.join(manifest['source_dumps'])}")
+
+            swap(db, target)
+            swapped = True
+            click.echo("  swapped the staged schemas into place")
+        finally:
+            if not swapped:
+                discard(db, target)
+                click.echo("  nothing written: the staged schemas were dropped", err=True)
 
         for path in write_reports(quality, paths):
             click.echo(f"  wrote {path.relative_to(paths.root)}")

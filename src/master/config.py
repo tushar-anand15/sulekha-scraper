@@ -16,6 +16,19 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 
 DEFAULT_DATABASE_URL = "postgresql://sambandh:sambandh@localhost:55432/sambandh"
 
+#: What the site calls this data. Written into ``core.build_manifest`` and read
+#: back by the API, which is the only place the name should come from -- the app
+#: used to carry its own copy of it and of the build date.
+DATASET_NAME = "Gram Sambandh master database"
+
+#: The two dumps the runbook restores before a build. Restoring them is a manual
+#: step outside this module, so the build cannot verify these names; it records
+#: what it was told. ``master build --source-dump NAME`` states a different pair.
+SOURCE_DUMPS = (
+    "sulekha_backup_20260507_patched.dump",
+    "sakarma_backup_20260812.dump",
+)
+
 
 @dataclass(frozen=True, slots=True)
 class Paths:

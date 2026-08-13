@@ -41,6 +41,7 @@ from typing import Any, Final
 from master.config import DISTRICTS, LB_TYPES, TIER_BY_PREFIX, Paths
 from master.db import Database
 from master.normalise import nm_en, nm_en_body, nm_ml
+from master.swap import Target
 
 #: Below this SequenceMatcher ratio a pairing is left unmatched rather than
 #: guessed at. Two genuinely different neighbouring panchayats routinely score
@@ -83,7 +84,7 @@ GROUP BY 1
 """
 
 LOCAL_BODY_DDL: Final = """
-CREATE TABLE core.local_body (
+CREATE TABLE {core}.local_body (
   lb_key           serial primary key,
   lb_code          text not null unique,
   district_ord     int  not null,
@@ -107,8 +108,8 @@ CREATE TABLE core.local_body (
 """
 
 LB_SULEKHA_YEAR_DDL: Final = """
-CREATE TABLE core.lb_sulekha_year (
-  lb_key            int not null references core.local_body(lb_key),
+CREATE TABLE {core}.lb_sulekha_year (
+  lb_key            int not null references {core}.local_body(lb_key),
   year_label        text not null,
   sulekha_lb_id     uuid not null,
   district_index    int not null,
@@ -425,6 +426,27 @@ def _prepare_spine(rows: Iterable[Row]) -> list[Row]:
     return prepared
 
 
+def is_in_elections(row: Row) -> bool:
+    """Whether the SEC ever published a result for this body.
+
+    Both real callers state it outright -- ``plan_spine`` because it knows which
+    rows came from the results feed and which from the registry, ``read_spine``
+    because it selects the column. It is inferred from the cycles only for a row
+    built by hand, in a test.
+
+    That distinction matters because ``db.query`` returns every value as a
+    string, so a NULL ``first_cycle`` and an empty one read identically: a body
+    with no result and a body whose cycles simply failed to load would look the
+    same to anything that guesses. The flag is the fact; the cycles are evidence.
+    """
+    raw = row.get("in_elections")
+    if isinstance(raw, bool):
+        return raw
+    if raw in (None, ""):
+        return bool(row.get("first_cycle") or row.get("last_cycle"))
+    return str(raw).strip().lower() in {"t", "true", "1", "yes"}
+
+
 def resolve(
     spine: Sequence[Row],
     sakarma: Sequence[Row],
@@ -533,12 +555,12 @@ def read_sulekha(db: Database, spine: Sequence[Row]) -> tuple[list[Row], list[st
     return rows, unresolved
 
 
-def read_spine(db: Database) -> list[Row]:
+def read_spine(db: Database, target: Target = Target()) -> list[Row]:
     """The spine as it exists in ``core.local_body``, with its surrogate keys."""
     return _prepare_spine(
         db.query(
             "SELECT lb_key, lb_code, district_ord, district_name, lb_type, lb_name_en, "
-            "lb_name_ml, first_cycle, last_cycle FROM core.local_body"
+            f"lb_name_ml, first_cycle, last_cycle, in_elections FROM {target.core}.local_body"
         )
     )
 
@@ -585,6 +607,11 @@ def plan_spine(db: Database, paths: Paths) -> tuple[list[Row], int]:
     elections_districts = {
         int(r["district_ord"]): r["district_name"] for r in rows if r["district_name"]
     }
+    # Every row of SPINE_SELECT is a published result, by definition of the table
+    # it comes from. Stating it here rather than inferring it later is what lets
+    # the report read a flag instead of guessing from an empty cycle.
+    for r in rows:
+        r["in_elections"] = True
     extra = 0
     registry = sorted(sec_registry_bodies(paths.sec_registry_cache).items())
     for code, (dist_ord, tier, name) in registry:
@@ -601,25 +628,29 @@ def plan_spine(db: Database, paths: Paths) -> tuple[list[Row], int]:
                 "lb_name_ml": "",
                 "first_cycle": "",
                 "last_cycle": "",
+                "in_elections": False,
             }
         )
         extra += 1
     return _prepare_spine(rows), extra
 
 
-def write_spine(db: Database, paths: Paths) -> int:
-    """Create ``core.local_body`` and fill it from the elections build.
+def write_spine(db: Database, paths: Paths, target: Target = Target()) -> int:
+    """Create ``core.local_body`` in ``target`` and fill it from the elections build.
 
-    This runs before the gate because it is a faithful copy of a source, not a
-    judgement: every row is one ``lb_code`` the elections build already emitted.
-    The judgements -- which Sakarma body is which, which Sulekha row is which --
-    are gated before anything writes them.
+    Faithful copy of a source, not a judgement: every row is one ``lb_code`` the
+    elections build already emitted, or one body the SEC's registry names. It
+    still writes into the staging schema rather than over the live one, because
+    a gate that fails after this point used to leave the site with a spine and
+    no crosswalk -- correct rows, joined to nothing.
     """
-    db.execute("CREATE SCHEMA IF NOT EXISTS core;")
-    db.execute("DROP TABLE IF EXISTS core.lb_sulekha_year, core.local_body CASCADE;")
-    db.execute(LOCAL_BODY_DDL)
+    db.execute(f"CREATE SCHEMA IF NOT EXISTS {target.core};")
     db.execute(
-        "INSERT INTO core.local_body "
+        f"DROP TABLE IF EXISTS {target.core}.lb_sulekha_year, {target.core}.local_body CASCADE;"
+    )
+    db.execute(LOCAL_BODY_DDL.format(core=target.core))
+    db.execute(
+        f"INSERT INTO {target.core}.local_body "
         "(lb_code, district_ord, district_name, lb_type, lb_name_en, lb_name_ml, "
         " first_cycle, last_cycle)" + SPINE_SELECT
     )
@@ -639,11 +670,11 @@ def write_spine(db: Database, paths: Paths) -> int:
     for code, (dist_ord, tier, name) in registry:
         added += (
             db.scalar(
-                """
-                INSERT INTO core.local_body
+                f"""
+                INSERT INTO {target.core}.local_body
                   (lb_code, district_ord, district_name, lb_type, lb_name_en, in_elections)
                 SELECT %s, %s, %s, %s, %s, false
-                WHERE NOT EXISTS (SELECT 1 FROM core.local_body WHERE lb_code = %s)
+                WHERE NOT EXISTS (SELECT 1 FROM {target.core}.local_body WHERE lb_code = %s)
                 RETURNING 1
                 """,
                 [
@@ -660,47 +691,55 @@ def write_spine(db: Database, paths: Paths) -> int:
     return added
 
 
-def link_geometry(db: Database) -> None:
+def link_geometry(db: Database, target: Target = Target()) -> None:
     """Carry the geometry crosswalk's codes onto the spine.
 
     Overrides are applied after the automatic crosswalk, so a hand-recorded
     pairing wins -- the same precedence ``geo.build.crosswalk`` uses.
     """
     db.execute(
-        """
-        UPDATE core.local_body b SET ksmart_lb_code = x.ksmart_lb_code
+        f"""
+        UPDATE {target.core}.local_body b SET ksmart_lb_code = x.ksmart_lb_code
         FROM src_geo.ksmart_lb_crosswalk x WHERE x.lb_code = b.lb_code;
-        UPDATE core.local_body b SET ksmart_lb_code = o.ksmart_lb_code
+        UPDATE {target.core}.local_body b SET ksmart_lb_code = o.ksmart_lb_code
         FROM src_geo.ksmart_lb_overrides o WHERE o.lb_code = b.lb_code;
-        UPDATE core.local_body b SET osm_code = o.osm_code
+        UPDATE {target.core}.local_body b SET osm_code = o.osm_code
         FROM src_geo.osm_lb_overrides o WHERE o.lb_code = b.lb_code;
         """
     )
 
 
-def write_matches(db: Database, result: CrosswalkResult) -> None:
-    """Write both crosswalk tables. Only reached once the gate has passed."""
-    db.execute("DROP TABLE IF EXISTS core._sk_map;")
+def write_matches(db: Database, result: CrosswalkResult, target: Target = Target()) -> None:
+    """Write both crosswalk tables. Only reached once the gate has passed.
+
+    The Sakarma side arrives as a list of pairs and is applied as one UPDATE, so
+    it needs somewhere to put the pairs first. That staging table is a TEMP
+    table rather than ``core._sk_map``: it exists for the length of one
+    statement, and the version that lived in ``core`` was never dropped, so
+    every built database carried a copy of the match list under a name beginning
+    with an underscore that nothing read.
+    """
+    db.execute("DROP TABLE IF EXISTS _sk_map;")
     db.execute(
-        "CREATE TABLE core._sk_map "
-        "(sakarma_lb_id int, lb_key int, method text, score numeric);"
+        "CREATE TEMP TABLE _sk_map (sakarma_lb_id int, lb_key int, method text, score numeric);"
     )
     db.copy_rows(
-        "core._sk_map",
+        "_sk_map",
         ["sakarma_lb_id", "lb_key", "method", "score"],
         [[int(sk["id"]), int(lb["lb_key"]), m, s] for sk, lb, m, s in result.sakarma_matches],
     )
     db.execute(
-        """
-        UPDATE core.local_body b
+        f"""
+        UPDATE {target.core}.local_body b
            SET sakarma_lb_id = m.sakarma_lb_id, sakarma_match = m.method, sakarma_score = m.score
-        FROM core._sk_map m WHERE m.lb_key = b.lb_key;
+        FROM _sk_map m WHERE m.lb_key = b.lb_key;
         """
     )
+    db.execute("DROP TABLE _sk_map;")
 
-    db.execute(LB_SULEKHA_YEAR_DDL)
+    db.execute(LB_SULEKHA_YEAR_DDL.format(core=target.core))
     db.copy_rows(
-        "core.lb_sulekha_year",
+        f"{target.core}.lb_sulekha_year",
         ["lb_key", "year_label", "sulekha_lb_id", "district_index", "lb_index", "method", "score"],
         [
             [int(lb_key), year, sid, int(di), int(li), meth, score]
@@ -728,19 +767,19 @@ def plan(db: Database, paths: Paths) -> CrosswalkResult:
     return _with_district_problems(result, unresolved_districts)
 
 
-def prepare(db: Database, paths: Paths) -> CrosswalkResult:
-    """Create the spine and resolve the crosswalk against it, writing no match.
+def prepare(db: Database, paths: Paths, target: Target = Target()) -> CrosswalkResult:
+    """Create the spine in ``target`` and resolve the crosswalk against it.
 
-    The spine is written because it is a faithful copy of a source: every row is
-    one ``lb_code`` the elections build already emitted, or one body the SEC's
-    registry names. The judgements -- which Sakarma body is which, which Sulekha
-    year-row is which -- are held in memory until the caller has gated them and
-    called ``write_matches``.
+    Writes no match: the judgements -- which Sakarma body is which, which
+    Sulekha year-row is which -- are held in memory until the caller has gated
+    them and called ``write_matches``. The spine itself is written, because the
+    surrogate keys the matches carry have to come from somewhere, but into the
+    staging schema, so a failed gate leaves the live spine exactly as it was.
     """
-    registry_only = write_spine(db, paths)
-    link_geometry(db)
+    registry_only = write_spine(db, paths, target)
+    link_geometry(db, target)
 
-    spine = read_spine(db)
+    spine = read_spine(db, target)
     sakarma = read_sakarma(db)
     sulekha, unresolved_districts = read_sulekha(db, spine)
     result = _with_district_problems(
