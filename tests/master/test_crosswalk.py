@@ -19,14 +19,24 @@ import pytest
 from master.crosswalk import (
     apply_overrides,
     cascade,
+    district_name_for,
     load_overrides,
+    override_district_mismatches,
     plan_spine,
     resolve,
     sakarma_pool,
     sec_registry_bodies,
     unknown_override_codes,
+    write_spine,
 )
 from master.normalise import nm_en, nm_en_body, nm_ml
+from master.validate import Source, assess
+
+
+def problems(result):
+    """What the gate would say about a resolve run, with no database behind it."""
+    return assess(result, Source()).failures()
+
 
 GP = "Grama Panchayat"
 
@@ -231,7 +241,7 @@ def test_an_override_naming_an_unknown_lb_code_is_reported():
 def test_a_reported_override_reaches_the_gate():
     typo = {**OVERRIDE, "lb_code": "G02999"}
     result = resolve([spine("G02046", ml="ഈസ്റ്റ് കല്ലട")], [], [], [typo])
-    assert any("G02999" in problem for problem in result.gate())
+    assert any("G02999" in problem for problem in problems(result))
 
 
 def test_a_valid_override_leaves_the_gate_clean():
@@ -241,8 +251,59 @@ def test_a_valid_override_leaves_the_gate_clean():
         [],
         [OVERRIDE],
     )
-    assert result.gate() == []
+    assert problems(result) == []
     assert result.methods["override"] == 1
+
+
+def test_an_override_does_not_fire_on_the_same_name_in_another_district():
+    """Kerala repeats body names across districts, so tier and name are not a key.
+
+    The override names one body in Kollam. A body of the same tier and the same
+    name in Palakkad is a different place, and taking the override would key its
+    meetings onto somebody else's spending -- silently, which is the failure
+    mode this file is written against.
+    """
+    elsewhere = [sakarma(1, "കിഴക്കേക്കല്ലട", dist="9")]
+    right = [spine("G02046", ml="ഈസ്റ്റ് കല്ലട", dist="2")]
+    forced, rest, missing = apply_overrides(elsewhere, right, [OVERRIDE], "sakarma", "name_ml")
+    assert not forced and not missing
+    assert [r["id"] for r in rest] == [1]
+
+
+def test_the_same_override_still_fires_in_its_own_district():
+    """The other half of the discrimination: tightening must not stop it working."""
+    here = [sakarma(1, "കിഴക്കേക്കല്ലട", dist="2")]
+    right = [spine("G02046", ml="ഈസ്റ്റ് കല്ലട", dist="2")]
+    forced, rest, _ = apply_overrides(here, right, [OVERRIDE], "sakarma", "name_ml")
+    assert not rest
+    assert forced[0][1]["lb_code"] == "G02046"
+
+
+def test_a_district_written_as_02_and_as_2_are_the_same_district():
+    """The two sides spell the ordinal differently; the comparison must not care."""
+    here = [sakarma(1, "കിഴക്കേക്കല്ലട", dist="02")]
+    right = [spine("G02046", ml="ഈസ്റ്റ് കല്ലട", dist="2")]
+    forced, _, _ = apply_overrides(here, right, [OVERRIDE], "sakarma", "name_ml")
+    assert forced and forced[0][2] == "override"
+
+
+def test_an_override_whose_district_contradicts_the_body_it_names_is_reported():
+    """Then one half of the row is a typo, and only a human knows which."""
+    wrong = {**OVERRIDE, "district_name": "PALAKKAD"}
+    reported = override_district_mismatches([wrong], [spine("G02046", ml="ഈസ്റ്റ് കല്ലട")])
+    assert reported and "G02046" in reported[0] and "PALAKKAD" in reported[0]
+
+
+def test_the_committed_overrides_agree_with_the_districts_they_name():
+    """The file in data/reference/master, read as the build reads it."""
+    from master.config import resolve_paths
+
+    overrides = load_overrides(resolve_paths().overrides)
+    kollam = spine("G02046", en="East Kallada", dist="2")
+    malappuram = spine("G10077", en="Oorakam", dist="10")
+    malappuram["district_name"] = "MALAPPURAM"
+    assert overrides
+    assert override_district_mismatches(overrides, [kollam, malappuram]) == []
 
 
 def test_overrides_load_from_the_committed_file(tmp_path):
@@ -349,6 +410,51 @@ def test_a_registry_only_body_joins_the_spine_with_no_cycles(registry_cache, pat
     assert added["district_name"] == "KANNUR"
 
 
+class RecordingDatabase:
+    """Just enough of ``Database`` for ``write_spine``: it remembers the inserts."""
+
+    def __init__(self, districts=()):
+        self.districts = [dict(d) for d in districts]
+        self.inserts: list[list] = []
+
+    def execute(self, sql, params=None):
+        return None
+
+    def query(self, sql):
+        return [dict(d) for d in self.districts]
+
+    def scalar(self, sql, params=None):
+        self.inserts.append(params)
+        return 1
+
+
+def test_a_registry_body_is_inserted_with_a_district_name(registry_cache, paths):
+    """``district_name`` is NOT NULL, and this insert is the one that could break it.
+
+    The name used to come from ``max(district_name) … WHERE district_ord = 13``
+    over the rows just written, which is NULL for a district whose only body in
+    the SEC's registry returned no result -- the exact case this insert exists
+    to rescue. It now comes from the district table, which always has an answer.
+    """
+    db = RecordingDatabase(districts=[])  # no elections body anywhere in Kannur
+    assert write_spine(db, paths) == 1
+    code, dist_ord, district_name, tier, name, _ = db.inserts[0]
+    assert (code, dist_ord, tier, name) == ("M13057", 13, "Municipality", "Mattannur")
+    assert district_name == "KANNUR"
+
+
+def test_a_district_the_elections_build_knows_keeps_its_spelling(registry_cache, paths):
+    """One district, one spelling in core.local_body, whichever side wrote the row."""
+    db = RecordingDatabase([{"district_ord": "13", "district_name": "KANNUR DISTRICT"}])
+    write_spine(db, paths)
+    assert db.inserts[0][2] == "KANNUR DISTRICT"
+
+
+def test_an_ordinal_outside_kerala_is_refused_rather_than_written_as_null():
+    with pytest.raises(ValueError, match="99"):
+        district_name_for(99, {})
+
+
 def test_a_registry_body_already_in_a_cycle_is_not_duplicated(registry_cache, paths):
     db = StubDatabase(
         [
@@ -387,12 +493,12 @@ def test_resolve_reports_both_sides_and_gates_on_the_unmatched():
     assert result.sakarma_total == 2
     assert len(result.sulekha_rows) == 2
     assert result.sulekha_total == 2
-    assert result.gate() == []
+    assert problems(result) == []
     # Every written year-row carries the lb_key of the body it resolved to.
     assert {row[0] for row in result.sulekha_rows} == {1, 2}
 
 
 def test_an_unmatched_sakarma_body_fails_the_gate():
     result = resolve([spine("G02001", ml="കൊട്ടാരക്കര")], [sakarma(1, "വേങ്ങര", dist="9")], [], [])
-    problems = result.gate()
-    assert problems and "sakarma" in problems[0]
+    failures = problems(result)
+    assert failures and "sakarma" in failures[0]

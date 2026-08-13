@@ -32,13 +32,13 @@ import csv
 import json
 import sqlite3
 from collections import Counter, defaultdict
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any, Final
 
-from master.config import LB_TYPES, TIER_BY_PREFIX, Paths
+from master.config import DISTRICTS, LB_TYPES, TIER_BY_PREFIX, Paths
 from master.db import Database
 from master.normalise import nm_en, nm_en_body, nm_ml
 
@@ -70,6 +70,16 @@ SELECT lb_code,
        max(cycle)                       AS last_cycle
 FROM src_elections.local_bodies
 GROUP BY lb_code, substr(district_code,2,2)
+"""
+
+#: One name per district ordinal, as the elections build spells it. Read on its
+#: own rather than derived from the spine rows so a registry-only body can be
+#: given a district name even when its district contributed no elections row.
+DISTRICT_SELECT: Final = """
+SELECT (substr(district_code,2,2))::int AS district_ord,
+       max(district_name)               AS district_name
+FROM src_elections.local_bodies
+GROUP BY 1
 """
 
 LOCAL_BODY_DDL: Final = """
@@ -183,6 +193,40 @@ def unknown_override_codes(overrides: Iterable[Row], known: Iterable[str]) -> li
 # ------------------------------------------------------------------- matching
 
 
+def district_ordinal(value: Any) -> str:
+    """A district ordinal reduced to one spelling, so ``'02'`` and ``2`` compare equal."""
+    try:
+        return str(int(str(value).strip()))
+    except (TypeError, ValueError):
+        return ""
+
+
+def _override_applies(lrow: Row, override: Row, target: Row | None, namefield: str) -> bool:
+    """Whether one override row describes this body -- district, tier and name.
+
+    All three, not two. Kerala repeats body names across districts often enough
+    that tier and name alone are not a key: there is a Perur Grama Panchayat in
+    Palakkad and another in Ernakulam, and an override written for one of them
+    must not fire on the other. The district comes from the body the override
+    names, which is the one place it is recorded rather than asserted.
+
+    ``target`` is ``None`` when the named ``lb_code`` is not on this side of the
+    build. The row still matches on tier and name so the caller can report the
+    code as unreachable; an override that quietly does nothing is the failure
+    this file exists to prevent.
+    """
+    if lrow["lb_type"] != override["lb_type"]:
+        return False
+    if target is not None and district_ordinal(lrow.get("dist_ord")) != district_ordinal(
+        target.get("dist_ord")
+    ):
+        return False
+    name = lrow.get(namefield)
+    return nm_ml(name) == nm_ml(override["source_name"]) or nm_en(name) == nm_en(
+        override["source_name"]
+    )
+
+
 def apply_overrides(
     left: Sequence[Row],
     right: Sequence[Row],
@@ -196,27 +240,15 @@ def apply_overrides(
     override that named a body this side of the build cannot see.
     """
     by_code = {r["lb_code"]: r for r in right}
-    wanted = {
-        (
-            nm_en(o["district_name"]),
-            o["lb_type"],
-            nm_ml(o["source_name"]),
-            nm_en(o["source_name"]),
-        ): o
-        for o in overrides
-        if o["source"] == source
-    }
+    wanted = [o for o in overrides if o["source"] == source]
     forced: list[Match] = []
     rest: list[Row] = []
     missing: list[str] = []
     for lrow in left:
-        hit = None
-        for (_dist, typ, ml, en), override in wanted.items():
-            if lrow["lb_type"] != typ:
-                continue
-            if nm_ml(lrow.get(namefield)) == ml or nm_en(lrow.get(namefield)) == en:
-                hit = override
-                break
+        hit = next(
+            (o for o in wanted if _override_applies(lrow, o, by_code.get(o["lb_code"]), namefield)),
+            None,
+        )
         if hit and hit["lb_code"] in by_code:
             forced.append((lrow, by_code[hit["lb_code"]], "override", 1.0))
         else:
@@ -224,6 +256,27 @@ def apply_overrides(
                 missing.append(hit["lb_code"])
             rest.append(lrow)
     return forced, rest, sorted(set(missing))
+
+
+def override_district_mismatches(overrides: Iterable[Row], spine: Iterable[Row]) -> list[str]:
+    """Overrides whose stated district is not the district of the body they name.
+
+    The district column is what discriminates two same-named bodies, so a wrong
+    one is not a cosmetic error: it means the row was written against a body the
+    author was not looking at. Reported rather than corrected here, because only
+    a human knows which half of the row is the typo.
+    """
+    by_code = {r["lb_code"]: r.get("district_name") or "" for r in spine}
+    mismatched = []
+    for o in overrides:
+        actual = by_code.get(o.get("lb_code", ""))
+        stated = o.get("district_name") or ""
+        if actual and nm_en(stated) != nm_en(actual):
+            mismatched.append(
+                f"override for {o['lb_code']} says district {stated!r}, "
+                f"but {o['lb_code']} is in {actual!r}"
+            )
+    return sorted(set(mismatched))
 
 
 def cascade(
@@ -320,7 +373,12 @@ def sakarma_pool(spine: Sequence[Row]) -> list[Row]:
 
 @dataclass(frozen=True, slots=True)
 class CrosswalkResult:
-    """What one crosswalk run produced, and everything wrong with it."""
+    """What one crosswalk run produced, and everything it could not resolve.
+
+    Whether that is good enough to write is not decided here: ``master.validate``
+    turns this into gates, coverage and a report. Keeping the judgement out of
+    this module is what stops two definitions of "resolved" drifting apart.
+    """
 
     bodies: int
     registry_only: int
@@ -334,6 +392,10 @@ class CrosswalkResult:
     problems: tuple[str, ...] = ()
     methods: Counter[str] = field(default_factory=Counter)
     year_methods: Counter[str] = field(default_factory=Counter)
+    #: The spine this run resolved against, carried so the gate can ask its own
+    #: questions of it -- duplicate codes, missing districts -- without a second
+    #: read that could disagree with the one the matching used.
+    spine: tuple[Row, ...] = ()
 
     @property
     def counts(self) -> dict[str, int]:
@@ -345,24 +407,6 @@ class CrosswalkResult:
             "sulekha year-rows matched": len(self.sulekha_rows),
             "sulekha year-rows total": self.sulekha_total,
         }
-
-    def gate(self) -> list[str]:
-        """Reasons this crosswalk must not be written. Empty means it passed.
-
-        Unmatched rows are the whole failure mode: a Sakarma body with no
-        ``lb_key`` silently drops its meetings from the join, and the page for
-        that body renders as though it never met.
-        """
-        problems = list(self.problems)
-        if self.sakarma_unmatched:
-            names = ", ".join(str(r.get("name_ml")) for r in self.sakarma_unmatched[:10])
-            problems.append(f"{len(self.sakarma_unmatched)} sakarma bodies unmatched: {names}")
-        if self.sulekha_unmatched:
-            names = ", ".join(
-                f"{r.get('year_label')} {r.get('lb_name')}" for r in self.sulekha_unmatched[:10]
-            )
-            problems.append(f"{len(self.sulekha_unmatched)} sulekha year-rows unmatched: {names}")
-        return problems
 
 
 # ----------------------------------------------------------------- the resolve
@@ -397,6 +441,7 @@ def resolve(
     """
     problems = unknown_override_codes(overrides, (r["lb_code"] for r in spine))
     reported = [f"override names unknown lb_code {code}" for code in problems]
+    reported += override_district_mismatches(overrides, spine)
 
     # ---- sakarma ----------------------------------------------------------
     pool = sakarma_pool(spine)
@@ -450,6 +495,7 @@ def resolve(
         problems=tuple(dict.fromkeys(reported)),
         methods=Counter(m for _, _, m, _ in sk_matches),
         year_methods=year_methods,
+        spine=tuple(spine),
     )
 
 
@@ -497,6 +543,35 @@ def read_spine(db: Database) -> list[Row]:
     )
 
 
+def district_names(db: Database) -> dict[int, str]:
+    """One name per district ordinal, as the elections build spells it."""
+    return {
+        int(r["district_ord"]): r["district_name"]
+        for r in db.query(DISTRICT_SELECT)
+        if r["district_name"]
+    }
+
+
+def district_name_for(dist_ord: int, elections: Mapping[int, str]) -> str:
+    """The district a registry-only body belongs to, never an empty answer.
+
+    The elections build is preferred wherever it has a row, so every district is
+    spelled one way in ``core.local_body``. ``DISTRICTS`` answers the case it
+    cannot: a district whose only body in the SEC's registry returned no result
+    contributes no elections row to copy a name from. The insert used to fill
+    the column with ``max(district_name) … WHERE district_ord = N``, which is
+    NULL exactly then -- and the column is NOT NULL, so the build would fail on
+    the one body it was added to rescue.
+    """
+    name = elections.get(dist_ord) or DISTRICTS.get(dist_ord)
+    if not name:
+        raise ValueError(
+            f"lb_code carries district ordinal {dist_ord}, which is not one of "
+            f"Kerala's fourteen districts {sorted(DISTRICTS)}"
+        )
+    return name
+
+
 def plan_spine(db: Database, paths: Paths) -> tuple[list[Row], int]:
     """The spine as it *would* be, read straight from the sources.
 
@@ -507,7 +582,9 @@ def plan_spine(db: Database, paths: Paths) -> tuple[list[Row], int]:
     """
     rows = db.query(SPINE_SELECT)
     known = {r["lb_code"] for r in rows}
-    district_name = {str(int(r["district_ord"])): r["district_name"] for r in rows}
+    elections_districts = {
+        int(r["district_ord"]): r["district_name"] for r in rows if r["district_name"]
+    }
     extra = 0
     registry = sorted(sec_registry_bodies(paths.sec_registry_cache).items())
     for code, (dist_ord, tier, name) in registry:
@@ -518,7 +595,7 @@ def plan_spine(db: Database, paths: Paths) -> tuple[list[Row], int]:
                 "lb_key": None,
                 "lb_code": code,
                 "district_ord": str(dist_ord),
-                "district_name": district_name.get(str(dist_ord), ""),
+                "district_name": district_name_for(dist_ord, elections_districts),
                 "lb_type": tier,
                 "lb_name_en": name,
                 "lb_name_ml": "",
@@ -551,7 +628,13 @@ def write_spine(db: Database, paths: Paths) -> int:
     # own registry endpoint lists every body it recognises, result or not, so
     # anything there but not in the spine is a real body with no election data
     # -- add it rather than lose its finances and meetings.
+    #
+    # The district name is resolved in Python rather than by a subquery over the
+    # rows just inserted. That subquery returned NULL for a district whose only
+    # registry body returned no result, and district_name is NOT NULL: the one
+    # case this insert exists for was also the one case that could break it.
     added = 0
+    elections_districts = district_names(db)
     registry = sorted(sec_registry_bodies(paths.sec_registry_cache).items())
     for code, (dist_ord, tier, name) in registry:
         added += (
@@ -559,13 +642,18 @@ def write_spine(db: Database, paths: Paths) -> int:
                 """
                 INSERT INTO core.local_body
                   (lb_code, district_ord, district_name, lb_type, lb_name_en, in_elections)
-                SELECT %s, %s,
-                       (SELECT max(district_name) FROM core.local_body WHERE district_ord = %s),
-                       %s, %s, false
+                SELECT %s, %s, %s, %s, %s, false
                 WHERE NOT EXISTS (SELECT 1 FROM core.local_body WHERE lb_code = %s)
                 RETURNING 1
                 """,
-                [code, dist_ord, dist_ord, tier, name, code],
+                [
+                    code,
+                    dist_ord,
+                    district_name_for(dist_ord, elections_districts),
+                    tier,
+                    name,
+                    code,
+                ],
             )
             or 0
         )
@@ -621,8 +709,12 @@ def write_matches(db: Database, result: CrosswalkResult) -> None:
     )
 
 
-def validate(db: Database, paths: Paths) -> CrosswalkResult:
-    """Resolve the crosswalk against the live sources, writing nothing."""
+def plan(db: Database, paths: Paths) -> CrosswalkResult:
+    """Resolve the crosswalk against the live sources, writing nothing.
+
+    What ``master validate`` runs. The result is handed to ``master.validate``,
+    which decides whether it would have been fit to write.
+    """
     spine, registry_only = plan_spine(db, paths)
     sakarma = read_sakarma(db)
     sulekha, unresolved_districts = read_sulekha(db, spine)
@@ -636,8 +728,15 @@ def validate(db: Database, paths: Paths) -> CrosswalkResult:
     return _with_district_problems(result, unresolved_districts)
 
 
-def build(db: Database, paths: Paths) -> CrosswalkResult:
-    """Create the spine, resolve the crosswalk, gate it, then write the matches."""
+def prepare(db: Database, paths: Paths) -> CrosswalkResult:
+    """Create the spine and resolve the crosswalk against it, writing no match.
+
+    The spine is written because it is a faithful copy of a source: every row is
+    one ``lb_code`` the elections build already emitted, or one body the SEC's
+    registry names. The judgements -- which Sakarma body is which, which Sulekha
+    year-row is which -- are held in memory until the caller has gated them and
+    called ``write_matches``.
+    """
     registry_only = write_spine(db, paths)
     link_geometry(db)
 
@@ -654,8 +753,6 @@ def build(db: Database, paths: Paths) -> CrosswalkResult:
         ),
         unresolved_districts,
     )
-    if not result.gate():
-        write_matches(db, result)
     return result
 
 

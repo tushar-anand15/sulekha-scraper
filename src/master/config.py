@@ -82,6 +82,32 @@ LB_TYPES = {
     5: "Grama Panchayat",
 }
 
+# Kerala's fourteen districts, in the ordinal the SEC's codes carry -- characters
+# two and three of every lb_code, so G02046 is district 2, Kollam. Spelled as the
+# elections build spells them, because ``core.local_body.district_name`` must read
+# the same whichever side of the build wrote the row.
+#
+# The elections data is the authority while it has a row to offer. This table is
+# what answers for a district whose only body in the SEC's registry returned no
+# result: there is then no elections row to copy a name from, and
+# ``district_name`` is NOT NULL.
+DISTRICTS = {
+    1: "THIRUVANANTHAPURAM",
+    2: "KOLLAM",
+    3: "PATHANAMTHITTA",
+    4: "ALAPPUZHA",
+    5: "KOTTAYAM",
+    6: "IDUKKI",
+    7: "ERNAKULAM",
+    8: "THRISSUR",
+    9: "PALAKKAD",
+    10: "MALAPPURAM",
+    11: "KOZHIKODE",
+    12: "WAYANAD",
+    13: "KANNUR",
+    14: "KASARGOD",
+}
+
 TIER_BY_PREFIX = {
     "G": "Grama Panchayat",
     "B": "Block Panchayat",
