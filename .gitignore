@@ -47,3 +47,5 @@ data/*
 **/.DS_Store
 credentials/
 exports/
+# Internal docs: runbooks, plans and brainstorms stay local.
+docs/
